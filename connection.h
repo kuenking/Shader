@@ -35,4 +35,14 @@ int sendMsg(enum  action actMsg, int  addChip);
   */
 void  explMsg( char * msg)
 
+/*关闭套接字*/
+int closeSocket();
+
+
+//查找转换函数
+int findIndex(int id);//下标
+unsigned char findColor(char *color);//花色
+unsigned char findPoint(char point);//点数
+int findType(char *type);//牌型
+int findAction(char *action);//行动
 #endif
