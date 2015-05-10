@@ -2,9 +2,9 @@
 #ifndef MY_TYPES_H_
 #define MY_TYPES_H_
 #include <stdbool.h>
-#include <my_define.h>
+#include "my_define.h"
 /*命令行参数包*/
-typedef struct ArgsPackage{
+typedef struct {
 	//牌桌IP
 	char serverIP[16];
 	//牌桌端口号
@@ -19,19 +19,19 @@ typedef struct ArgsPackage{
 	int colorNum[4];
 	//已发的数字个数 从1到13
 	int pointNum[14];
-};
+}ArgsPackage;
  
 /*牌信息*/
-typedef struct Card{
+typedef struct {
      //花色
 	unsigned char color;
 	//点数
 	unsigned char point;
-};
+}Card;
  
  
 /*牌手信息*/
-typedef struct Player{
+typedef struct {
     //ID
 	int ID;
 	//剩余金钱
@@ -50,16 +50,17 @@ typedef struct Player{
 	//本局下注
 	int Currbet;
 	//手牌列表
-	struct Card handCard[2];
+	Card handCard[2];
 	//获胜局数
 	int winNum;
 	//最近行动
 	unsigned char action;
 	//所有行动
 	unsigned char actionAll[20];
-}; 
+}Player; 
+
 /**全局信息*/
-typedef struct Round{
+typedef struct {
 	//用户名
    char pname[32];
     //当前进行的局数
@@ -73,7 +74,7 @@ typedef struct Round{
    //公共牌数量取0，3，4，5
    int pubCardNum;
    //公共牌信息
-   struct Card pubCard[5];
+   Card pubCard[5];
    //选手信息（包括自己，便于解析）
    Player player[NUM_PLAYER];
    //玩家自己ID
@@ -86,6 +87,6 @@ typedef struct Round{
    int poolSum;
    //当前游戏阶段
    int gameStep;
-};
+}Round;
  
 #endif

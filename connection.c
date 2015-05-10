@@ -7,6 +7,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+char  actions[5][8]={ "check \n" ,  "call \n" ,  "raise" ,  "all_in \n" ,  "fold \n" };
+
 //全局socket
 int sock;
 
@@ -71,7 +75,7 @@ int explMsg(char *msg){
      //局数+1
      // ++roundData.roundNums;
      //公共牌为0
-     roundData.pubCardNum=empty;
+     roundData.pubCardNum=0;
    } else  if ( strcmp (type, "game-over" )==0){//游戏结束消息
 		printf("游戏结束\n");
 		return -1;
@@ -96,8 +100,8 @@ int explMsg(char *msg){
 			roundData.gameStep = STEP_ONE;
 			for(int i=0;i<2;i++){
 				p = strtok(p, "\n" );
-				char color[10],point;
-				sscanf(p,"%s%c",color,&point);
+				char color[10],point[5];
+				sscanf(p,"%s%s",color,point);
 				int selfID = roundData.selfID;
 				roundData.player[selfID].handCard[i].color = findColor(color);
 				roundData.player[selfID].handCard[i].point = findPoint(point);
@@ -114,10 +118,10 @@ int explMsg(char *msg){
 				char action[20];	//本手牌已行动过的所有玩家（包括被询问者和盲注）的id,手中筹码、剩余金币数、本手牌累计投注额、及最近的一次有效action，按逆时针座次由近及远排列，上家排在第一个
 				sscanf(p,"%d%d%d%d%s",&id,&je,&mo,&bet,action);
 				id = findIndex(id);
-				roundData.pubCard[i].jetton = je;
-				roundData.pubCard[i].money = mo;
-				roundData.pubCard[i].bet = bet;
-				roundData.pubCard[i].action = findAction(action);
+				roundData.player[id].jetton = je;
+				roundData.player[id].money = mo;
+				roundData.player[id].bet = bet;
+				roundData.player[id].action = findAction(action);
 				p = p + strlen (p)+1;
 			}
 			p = strtok(p, "\n" );
@@ -137,9 +141,9 @@ int explMsg(char *msg){
    		roundData.gameStep = STEP_TWO;
 		roundData.pubCardNum=3;
 		for(int i=0;i<3;i++){
-			char color[10],point;
+			char color[10],point[5];
 			p = strtok(p, "\n" );
-			sscanf(p,"%s%c",color,&point);
+			sscanf(p,"%s%s",color,point);
 			roundData.pubCard[i].color = findColor(color);
 			roundData.pubCard[i].point = findPoint(point);
 			p = p + strlen (p)+1;
@@ -149,9 +153,9 @@ int explMsg(char *msg){
    } else  if ( strcmp (type, "turn/" )==0){//转牌消息
    		roundData.gameStep = STEP_THREE;
 		roundData.pubCardNum=4;
-		char color[10],point;
+		char color[10],point[5];
 		p = strtok(p, "\n" );
-		sscanf(p,"%s%c",color,&point);
+		sscanf(p,"%s%s",color,point);
 		roundData.pubCard[3].color = findColor(color);
 		roundData.pubCard[3].point = findPoint(point);
 		p = p + strlen (p)+1;
@@ -160,8 +164,8 @@ int explMsg(char *msg){
    } else  if ( strcmp (type, "river/" )==0){//河牌消息
    		roundData.gameStep = STEP_FOUR;
 		roundData.pubCardNum=5;
-		char color[10],point;
-		sscanf(p,"%s%c",color,&point);
+		char color[10],point[5];
+		sscanf(p,"%s%s",color,point);
 		roundData.pubCard[4].color = findColor(color);
 		roundData.pubCard[4].point = findPoint(point);
 		p = p + strlen (p)+1;
@@ -189,8 +193,8 @@ int explMsg(char *msg){
 				break;
 			}
 			int id;
-			char color[2][4],point[2],nut[20];
-			sscanf(p,"rank: %d%s%c %s%c %s",&id,color[0],&point[0],color[1],&point[1],nut);
+			char color[2][4],point[2][5],nut[20];
+			sscanf(p,"rank: %d%s%c %s%c %s",&id,color[0],point[0],color[1],point[1],nut);
 			id = findIndex(id);
 			roundData.player[id].handCard[0].color = findColor(color[0]);//剩余玩家的2张手牌
 			roundData.player[id].handCard[1].color = findColor(color[1]);
@@ -200,6 +204,7 @@ int explMsg(char *msg){
 			p = p+strlen(p)+1;
 		}
    } else  if ( strcmp (type, "pot-win/" )){//彩池分配消息
+   		int num;
    		roundData.gameStep = STEP_FIVE;
 		 //所有玩家信息
 		while (1)
@@ -211,13 +216,13 @@ int explMsg(char *msg){
 				p = p+strlen(p)+1;
 				break ;
 			}
-			int id,num;
+			int id;
 			sscanf (p, "%d: %d" ,&id,&num);
-			if(id == self.ID) roundData.self.jetton+=num;
+			if(id == roundData.selfID) roundData.player[id].jetton+=num;
 			else 
 			{
 				id = findIndex(id);
-				roundData.pubCard[id].jetton+=num;
+				roundData.player[id].jetton+=num;
 			}
 			p=p + strlen (p)+1;
 		}
@@ -264,7 +269,7 @@ int getMsg(char*msg )
    }
 }
 
-int sendMsg(enum action actMsg, int addChip)
+int sendMsg(int actMsg, int addChip)
 {
    char raise[MAXLENGTH];
    if (RAISE != actMsg)
@@ -302,20 +307,35 @@ unsigned char findColor(char *color)
 	return c;
 	
 }
-unsigned char findPoint(char point)
+unsigned char findPoint(char* point)
 {
 	unsigned char p;
+	/*
 	if(point<='10')
 	p = point-'0';
 	else if(point=='J') p = 11;
 	else if(point=='Q') p = 12;
 	else if(point=='K') p = 13;
 	else if(point=='A') p = 14;
+	*/
+	if(strcmp(point,"2")==0)p=2;
+	else if(strcmp(point,"3")==0)p=3;
+	else if(strcmp(point,"4")==0)p=4;
+	else if(strcmp(point,"5")==0)p=5;
+	else if(strcmp(point,"6")==0)p=6;
+	else if(strcmp(point,"7")==0)p=7;
+	else if(strcmp(point,"8")==0)p=8;
+	else if(strcmp(point,"9")==0)p=9;
+	else if(strcmp(point,"10")==0)p=10;
+	else if(strcmp(point,"J")==0)p=11;
+	else if(strcmp(point,"Q")==0)p=12;
+	else if(strcmp(point,"K")==0)p=13;
+	else if(strcmp(point,"A")==0)p=14;
 	return p;
 }
 int findType(char *type)
 {
-	int t
+	int t;
 	if(strcmp(type,"HIGH_CARD")==0) t = HIGH_CARD;
 	else if(strcmp(type,"ONE_PAIR")==0) t=ONE_PAIR;
 	else if(strcmp(type,"TWO_PAIR")==0) t=TWO_PAIR;
@@ -330,9 +350,9 @@ int findType(char *type)
 int findAction(char *action)
 {
 	int a;
-	if(strcmp(action,"check")==0) a = check;
-	else if(strcmp(action,"call")==0) a=call;
-	else if(strcmp(action,"raise")==0) a=raise;
-	else if(strcmp(action,"all_in")==0) a=all_in;
-	else if(strcmp(action,"fold")==0) a=fold;
+	if(strcmp(action,"check")==0) a = CHECK;
+	else if(strcmp(action,"call")==0) a=CALL;
+	else if(strcmp(action,"raise")==0) a=RAISE;
+	else if(strcmp(action,"all_in")==0) a=ALL_IN;
+	else if(strcmp(action,"fold")==0) a=FOLD;
 }
