@@ -40,8 +40,8 @@ typedef struct {
 	int jetton;
 	//已下赌注
 	int bet;
-	//是否弃牌 true为弃牌
-	bool isDiscard;
+	//是否live true为live
+	bool isLive;
 
 	//最佳牌型
 	int bestType;

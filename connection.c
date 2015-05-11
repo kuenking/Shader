@@ -194,7 +194,7 @@ int explMsg(char *msg){
 			}
 			int id;
 			char color[2][4],point[2][5],nut[20];
-			sscanf(p,"rank: %d%s%c %s%c %s",&id,color[0],point[0],color[1],point[1],nut);
+			sscanf(p,"rank: %d%s%c%s%c%s",&id,color[0],point[0],color[1],point[1],nut);
 			id = findIndex(id);
 			roundData.player[id].handCard[0].color = findColor(color[0]);//剩余玩家的2张手牌
 			roundData.player[id].handCard[1].color = findColor(color[1]);
@@ -296,7 +296,14 @@ void closeSocket()
 
 int findIndex(int id)
 {
-	
+	for(int i=0;i<NUM_PLAYER;i++)
+	{
+		if(roundData.player[i].ID==id)
+		{
+			return i;
+		}
+	}
+	return -1;
 }
 unsigned char findColor(char *color)
 {
