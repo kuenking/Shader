@@ -27,7 +27,7 @@ int explMsg(char *msg){
    char *p = strtok (msg,"\n");
    sscanf (p,"%s",type);
    if(strcmp(type,"reg:")==0){//注册消息
-	sscanf(msg,"%s%d%s",temp,roundData.selfID,roundData.pname);   
+	sscanf(msg,"%s%d%s",temp,&roundData.selfID,roundData.pname);   
    }
    
    p=p + strlen(p) + 1;//移除以处理过的消息
@@ -243,7 +243,7 @@ int conServer(char ** argv)
    //处理argv信息
    //字符串赋值
    strcpy(argsMsg.serverIP,argv[1]);
-   sscanf(argv[2],"%u",argsMsg.serverPort);
+   sscanf(argv[2],"%hd",&argsMsg.serverPort);
    strcpy (argsMsg.localIP,argv[3]);
    //设置地址信息
    struct sockaddr_in serverAddr;
@@ -267,6 +267,7 @@ int getMsg(char*msg )
      perror("recv error");
      return RECV_ERROR;
    }
+   return SUCCESS;
 }
 
 int sendMsg(int actMsg, int addChip)
@@ -355,4 +356,5 @@ int findAction(char *action)
 	else if(strcmp(action,"raise")==0) a=RAISE;
 	else if(strcmp(action,"all_in")==0) a=ALL_IN;
 	else if(strcmp(action,"fold")==0) a=FOLD;
+	return a;
 }
