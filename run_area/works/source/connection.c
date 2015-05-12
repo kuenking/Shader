@@ -33,8 +33,6 @@ int explMsg(char *msg){
    char *p = strtok (msg,"\n");
    sscanf (p,"%s",type);   
    p=p + strlen(p) + 1;//移除以处理过的消息
-   LOG2F(filename,p);
-LOG2F(filename,type);
    if(strcmp(type,"seat/")==0){//座次消息
      LOG2F(filename,"接受到座次信息");
      roundData.gameStep = STEP_ZERO;

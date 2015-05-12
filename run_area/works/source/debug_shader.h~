@@ -4,8 +4,8 @@
 #include "stdio.h"
 #undef RU
 #undef OT
-#define LOG2F(filename,str) {\
-FILE *__p=fopen(filename,"a");\
+#define LOG2F(str) {\
+FILE *__p=fopen("log.txt","a");\
 if(__p==NULL)printf("open log file error\n");\
 else{\
 fprintf(__p, str );\
