@@ -307,7 +307,7 @@ int findIndex(int id)
 }
 unsigned char findColor(char *color)
 {
-	unsigned char c;
+	unsigned char c=0;
 	if(strcmp(color,"SPADES")==0) c = SPADES;
 	else if(strcmp(color,"HEARTS")==0) c=HEARTS;
 	else if(strcmp(color,"CLUBS")==0) c=CLUBS;
@@ -317,7 +317,7 @@ unsigned char findColor(char *color)
 }
 unsigned char findPoint(char* point)
 {
-	unsigned char p;
+	unsigned char p=0;
 	/*
 	if(point<='10')
 	p = point-'0';
@@ -343,7 +343,7 @@ unsigned char findPoint(char* point)
 }
 int findType(char *type)
 {
-	int t;
+	int t=0;
 	if(strcmp(type,"HIGH_CARD")==0) t = HIGH_CARD;
 	else if(strcmp(type,"ONE_PAIR")==0) t=ONE_PAIR;
 	else if(strcmp(type,"TWO_PAIR")==0) t=TWO_PAIR;
@@ -357,7 +357,7 @@ int findType(char *type)
 }
 int findAction(char *action)
 {
-	int a;
+	int a=0;
 	if(strcmp(action,"check")==0) a = CHECK;
 	else if(strcmp(action,"call")==0) a=CALL;
 	else if(strcmp(action,"raise")==0) a=RAISE;
