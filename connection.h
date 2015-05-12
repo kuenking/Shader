@@ -5,6 +5,7 @@
 #define CONNECTION_H_
 #include "my_types.h"
 #include "my_define.h"
+#include "debug_shader.h"
 //声明参数包
 extern   ArgsPackage argsMsg;
 //声明套接字
