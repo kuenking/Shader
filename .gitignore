@@ -1,0 +1,4 @@
+*.tar.gz
+*.o
+run_area/*
+
