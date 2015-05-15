@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <string.h>
 ArgsPackage argsMsg;
 int    main(int  args,char **argv) {
     if   (args!=6) {

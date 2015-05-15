@@ -3,5 +3,14 @@
 #include "debug_shader.h"
 #include "error_code.h"
 #include "my_types.h"
+#include "my_define.h"
+extern Round roundData;
+//整体AI
+void ai();
 
+//step AI
+void stepOneAI();
+void stepTwoAI();
+void stepThreeAI();
+void stepFourAI();
 #endif

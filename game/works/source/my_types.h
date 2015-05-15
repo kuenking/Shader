@@ -57,7 +57,7 @@ typedef struct {
 	unsigned char action;
 	//所有行动
 	unsigned char actionAll[20];
-}Player; 
+}Player;
 
 /**全局信息*/
 typedef struct {

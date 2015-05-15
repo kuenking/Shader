@@ -1,6 +1,7 @@
 #include "connection.h"
 #include "my_types.h"
 #include "error_code.h"
+#include "ai.h"
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -37,10 +38,16 @@ int explMsg(char *msg) {
     if(strcmp(type,"seat/")==0) { //座次消息
         LOG2F(filename,"SEAT!!!");
         roundData.gameStep = STEP_ZERO;
+        roundData.buttonId=0;
+        roundData.buttonIndex=0;
+        roundData.pubCardNum=0;
         //其他玩家信息清空
-        memset(roundData.player,0, sizeof(roundData.player));
+        memset(roundData.player,0, sizeof(Player)*NUM_PLAYER);
         //公共牌清空
-        memset(roundData.pubCard,0, sizeof(roundData.pubCard));
+        memset(roundData.pubCard,0, sizeof(Card)*5);
+        roundData.selfIndex=0;
+        roundData.blind=0;
+        roundData.poolSum=0;
         //获取庄家信息，存入位置0
         p = strtok(p, "\n" );//得到一行消息
         sscanf(p,"%s%d%d%d",temp,&roundData.player[0].ID,&roundData.player[0].jetton,&roundData.player[0].money);
