@@ -5,7 +5,7 @@
 		<Cursor position="406" topLine="6" />
 	</File>
 	<File name="connection.c" open="0" top="0" tabpos="0">
-		<Cursor position="6179" topLine="135" />
+		<Cursor position="7855" topLine="190" />
 	</File>
 	<File name="main.c" open="0" top="0" tabpos="0">
 		<Cursor position="530" topLine="0" />
@@ -14,6 +14,6 @@
 		<Cursor position="343" topLine="0" />
 	</File>
 	<File name="my_types.h" open="0" top="0" tabpos="0">
-		<Cursor position="1566" topLine="54" />
+		<Cursor position="1268" topLine="54" />
 	</File>
 </CodeBlocks_layout_file>

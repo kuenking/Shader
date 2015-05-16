@@ -17,8 +17,8 @@ typedef struct {
     int ID;
     //各个花色个数
     int colorNum[4];
-    //已发的数字个数 从1到13
-    int pointNum[14];
+    //已发的数字个数 从1到14
+    int pointNum[15];
 } ArgsPackage;
 
 /*牌信息*/
