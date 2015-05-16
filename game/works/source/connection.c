@@ -9,7 +9,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include<time.h>
 char  actions[5][8]= { "check \n" ,  "call \n" ,  "raise" ,  "all_in \n" ,  "fold \n" };
 
 //全局socket
@@ -37,6 +37,7 @@ int explMsg(char *msg) {
     LOG2F(filename,temp);
     if(strcmp(type,"seat/")==0) { //座次消息
         LOG2F(filename,"SEAT!!!");
+        //初始化信息
         roundData.gameStep = STEP_ZERO;
         roundData.buttonId=0;
         roundData.buttonIndex=0;
@@ -83,7 +84,7 @@ int explMsg(char *msg) {
         //玩家数量
         roundData.playerNum=num;
         //局数+1
-        // ++roundData.roundNums;
+        ++roundData.roundNums;
         //公共牌为0
         roundData.pubCardNum=0;
         LOG2F(filename,"SEAT OVER!!!");
@@ -140,6 +141,7 @@ int explMsg(char *msg) {
             roundData.player[id].money = mo;
             roundData.player[id].bet = bet;
             roundData.player[id].action = findAction(action);
+            if(roundData.player[id].action==FOLD) roundData.player[id].isLive=false;
             p = p + strlen (p)+1;
         }
         p = strtok(p, "\n" );
@@ -152,9 +154,11 @@ int explMsg(char *msg) {
 
         此处接入AI算法
 
-        */
-        //测试使用ai-----all_in
-        LOG2F(filename,"ALL_IN");
+
+        srand(time(0));
+	int t = rand()%5;
+	sprintf(temp,"RANDOM:%d!",t);
+        LOG2F(filename,temp);*/
         sendMsg(ALL_IN,0);
         LOG2F(filename,"INQUIRE OVER");
 
@@ -188,9 +192,11 @@ int explMsg(char *msg) {
         LOG2F(filename,"TURN OVER!!!");
     } else  if ( strcmp (type, "river/" )==0) { //河牌消息
 	LOG2F(filename,"RIVER!!!");
+	LOG2F(filename,p);
         roundData.gameStep = STEP_FOUR;
         roundData.pubCardNum=5;
         char color[10],point[5];
+        p = strtok(p, "\n" );
         sscanf(p,"%s%s",color,point);
         roundData.pubCard[4].color = findColor(color);
         roundData.pubCard[4].point = findPoint(point);
@@ -233,7 +239,7 @@ int explMsg(char *msg) {
             p = p+strlen(p)+1;
         }
 	LOG2F(filename,"SHOWDOWN OVER!!!");
-    } else  if ( strcmp (type, "pot-win/" )) { //彩池分配消息
+    } else  if ( strcmp (type, "pot-win/" )==0) { //彩池分配消息
 	LOG2F(filename,"POT_WIN!!!");
         int num;
         roundData.gameStep = STEP_FIVE;
@@ -253,7 +259,7 @@ int explMsg(char *msg) {
             else
             {
                 id = findIndex(id);
-                roundData.player[id].jetton+=num;
+                roundData.player[id].jetton+=num;d
             }
             p=p + strlen (p)+1;
         }
@@ -269,6 +275,9 @@ int explMsg(char *msg) {
         LOG2F(filename,"OTHER INFO OVER!!!");
     }
     //防止粘包
+    LOG2F(filename,"\n\nOTHERRRRRRRRRRRRRRRRRRRRR");
+    LOG2F(filename,p);
+    LOG2F(filename,"OTHERENDDDDDDDDDDDDDDDDDDD\n\n");
     return  explMsg(p);
 }
 
@@ -332,7 +341,7 @@ int getMsg(char*msg )
         return RECV_ERROR;
     }
     LOG2F(filename,"RECV SUCCESS!!!");
-    RU(char temp[MAXLENGTH];sprintf(temp,"RECV MSG IS:%s!!!",msg););
+    RU(char temp[MAXLENGTH];sprintf(temp,"STARTTTTTTTTTTTTTTTTT\n\nRECV MSG IS:%sENDDDDDDDDDDDDDDDDD\n\n",msg););
     LOG2F(filename,temp);
     return SUCCESS;
 }

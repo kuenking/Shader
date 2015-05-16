@@ -21,10 +21,13 @@ int    main(int  args,char **argv) {
     char msg[MAXLENGTH];
     while(1) {
         LOG2F(filename,"准备接受msg");
-	memset(msg,0,MAXLENGTH);
+        memset(msg,0,MAXLENGTH);
         getMsg(msg);
         if(-1==explMsg(msg))
-            break;
+            {
+                LOG2F(filename,"退出");
+                break;
+            }
     }
     closeSocket();
     return    0;
