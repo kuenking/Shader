@@ -84,6 +84,7 @@ int explMsg(char *msg) {
             ++num;
             p = p + strlen(p) + 1;
         }
+        roundData.selfIndex = findIndex(argsMsg.ID);
         //玩家数量
         roundData.playerNum=num;
         //局数+1
@@ -117,13 +118,13 @@ int explMsg(char *msg) {
     } else  if ( strcmp (type, "hold/" )==0) { //手牌消息
         LOG2F(filename,"HOLD!!!");
         roundData.gameStep = STEP_ONE;
+        int selfIndex = roundData.selfIndex;
         for(int i=0; i<2; i++) {
             p = strtok(p, "\n" );
             char color[10],point[5];
             sscanf(p,"%s%s",color,point);
-            int selfID = roundData.selfID;
-            roundData.player[selfID].handCard[i].color = findColor(color);
-            roundData.player[selfID].handCard[i].point = findPoint(point);
+            roundData.player[selfIndex].handCard[i].color = findColor(color);
+            roundData.player[selfIndex].handCard[i].point = findPoint(point);
             p = p + strlen (p)+1;
         }
         p = strtok(p, "\n" );//除去最后的结束标志
@@ -158,18 +159,18 @@ int explMsg(char *msg) {
         此处接入AI算法
 
         */
-        /*random
-        if(roundData.player[roundData.selfID].isLive==true)
+        /*random*/
+        if(roundData.player[roundData.selfIndex].isLive==true)
         {
             srand(time(0));
             int t = rand()%5;
             sprintf(temp,"RANDOM:%d!",t);
             LOG2F(filename,temp);
             sendMsg(t,roundData.blind);
-            if(t==FOLD) roundData.player[roundData.selfID].isLive = false;
-        }*/
-        /*FOLD*/
-        if(roundData.player[roundData.selfID].isLive==true)
+            if(t==FOLD) roundData.player[roundData.selfIndex].isLive = false;
+        }
+        /*FOLD
+        if(roundData.player[roundData.selfIndex].isLive==true)
         {
             int nums=0;
             for(int i=0;i<8;i++)
@@ -177,8 +178,8 @@ int explMsg(char *msg) {
                 if(roundData.player[i].isLive==true) nums++;
             }
             if(nums==1) sendMsg(ALL_IN,0);
-            else sendMsg(FOLD,0);
-        }
+            else {sendMsg(FOLD,0);roundData.player[roundData.selfIndex].isLive=false;}
+        }*/
         /*ALL_IN
         sendMsg(ALL_IN,0);*/
         LOG2F(filename,"INQUIRE OVER");
@@ -276,7 +277,7 @@ int explMsg(char *msg) {
             }
             int id;
             sscanf (p, "%d: %d" ,&id,&num);
-            if(id == roundData.selfID) roundData.player[id].jetton+=num;
+            if(id == roundData.selfIndex) roundData.player[id].jetton+=num;
             else
             {
                 id = findIndex(id);

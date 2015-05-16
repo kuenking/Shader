@@ -78,7 +78,7 @@ typedef struct {
     //选手信息（包括自己，便于解析）
     Player player[NUM_PLAYER];
     //玩家自己ID
-    int selfID;
+    //int selfID;
     //玩家自己下标
     int selfIndex;
     //盲注,最小跟注
