@@ -31,6 +31,21 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="ai.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="ai.h" />
+		<Unit filename="connection.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="connection.h" />
+		<Unit filename="debug_shader.h" />
+		<Unit filename="error_code.h" />
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="my_define.h" />
+		<Unit filename="my_types.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
