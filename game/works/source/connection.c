@@ -187,7 +187,7 @@ int explMsg(char *msg) {
         p = p + strlen (p)+1;
         LOG2F(filename,"TURN OVER!!!");
     } else  if ( strcmp (type, "river/" )==0) { //河牌消息
-	LOG2F(filename,"RIVER!!!");
+        LOG2F(filename,"RIVER!!!");
         roundData.gameStep = STEP_FOUR;
         roundData.pubCardNum=5;
         char color[10],point[5];
@@ -197,9 +197,9 @@ int explMsg(char *msg) {
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
-	LOG2F(filename,"RIVER OVER!!!");
+        LOG2F(filename,"RIVER OVER!!!");
     } else  if ( strcmp (type, "showdown/" )==0) { //摊牌消息
-	LOG2F(filename,"SHOWDOWN!!!");
+        LOG2F(filename,"SHOWDOWN!!!");
         roundData.gameStep = STEP_FIVE;
         p = strtok(p,"\n" );
         sscanf(p,"%s",temp);
@@ -232,9 +232,9 @@ int explMsg(char *msg) {
             roundData.player[id].bestType = findType(nut);//玩家最佳牌型
             p = p+strlen(p)+1;
         }
-	LOG2F(filename,"SHOWDOWN OVER!!!");
+        LOG2F(filename,"SHOWDOWN OVER!!!");
     } else  if ( strcmp (type, "pot-win/" )) { //彩池分配消息
-	LOG2F(filename,"POT_WIN!!!");
+        LOG2F(filename,"POT_WIN!!!");
         int num;
         roundData.gameStep = STEP_FIVE;
         //所有玩家信息
@@ -259,7 +259,7 @@ int explMsg(char *msg) {
         }
         //玩家数量
         roundData.playerNum=num;
-	LOG2F(filename,"POT_WIN OVER!!!");
+        LOG2F(filename,"POT_WIN OVER!!!");
     } else
     {
         p = strtok(p, "\n" );
@@ -332,7 +332,7 @@ int getMsg(char*msg )
         return RECV_ERROR;
     }
     LOG2F(filename,"RECV SUCCESS!!!");
-    RU(char temp[MAXLENGTH];sprintf(temp,"RECV MSG IS:%s!!!",msg););
+    RU(char temp[MAXLENGTH]; sprintf(temp,"RECV MSG IS:%s!!!",msg););
     LOG2F(filename,temp);
     return SUCCESS;
 }

@@ -3,7 +3,7 @@
   */
 #ifndef ERROR_CODE_H_
 #define ERROR_CODE_H_
-  
+
 #define SUCCESS 0
 #define ARGS_NUM_ERROR 1
 #define ARGS_CON_ERROR 2

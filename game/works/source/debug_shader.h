@@ -21,7 +21,7 @@ fclose(__p);\
 #define OT(x,format) printf("file:"__FILE__"\tline:%d""\t--->"#x":"#format"\n",__LINE__,x)
 #endif
 #else
-#define LOG2F(fileName,str) 
+#define LOG2F(fileName,str)
 #define RU(x)
 #define OT(x,format)
 #endif
