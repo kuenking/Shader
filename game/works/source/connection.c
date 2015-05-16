@@ -52,12 +52,13 @@ int explMsg(char *msg) {
         //获取庄家信息，存入位置0
         p = strtok(p, "\n" );//得到一行消息
         sscanf(p,"%s%d%d%d",temp,&roundData.player[0].ID,&roundData.player[0].jetton,&roundData.player[0].money);
+        roundData.player[0].isLive = true;
         p = p + strlen(p) + 1;
         //小盲注玩家信息
         p = strtok(p,"\n");
         sscanf(p,"%s%s%d%d%d",temp,temp,&roundData.player[1].ID,&roundData.player[1].jetton,&roundData.player[1].money);
         p = p + strlen(p) + 1;
-
+        roundData.player[1].isLive = true;
         //判断是否有大盲注玩家
 
         int num = 2;
@@ -65,6 +66,7 @@ int explMsg(char *msg) {
         if (strcmp(temp, "big" )==0) {
             p = strtok (p,"\n");
             sscanf (p,"%s%s%d%d%d",temp,temp,&roundData.player[num].ID,&roundData.player[num].jetton,&roundData.player[num].money);
+            roundData.player[num].isLive = true;
             ++num;
             p = p + strlen(p)+1;
         }
@@ -78,6 +80,7 @@ int explMsg(char *msg) {
                 break ;
             }
             sscanf(p,"%d%d%d",&roundData.player[num].ID,&roundData.player[num].jetton,&roundData.player[num].money);
+            roundData.player[num].isLive = true;
             ++num;
             p = p + strlen(p) + 1;
         }
@@ -154,12 +157,30 @@ int explMsg(char *msg) {
 
         此处接入AI算法
 
-
-        srand(time(0));
-	int t = rand()%5;
-	sprintf(temp,"RANDOM:%d!",t);
-        LOG2F(filename,temp);*/
-        sendMsg(ALL_IN,0);
+        */
+        /*random
+        if(roundData.player[roundData.selfID].isLive==true)
+        {
+            srand(time(0));
+            int t = rand()%5;
+            sprintf(temp,"RANDOM:%d!",t);
+            LOG2F(filename,temp);
+            sendMsg(t,roundData.blind);
+            if(t==FOLD) roundData.player[roundData.selfID].isLive = false;
+        }*/
+        /*FOLD*/
+        if(roundData.player[roundData.selfID].isLive==true)
+        {
+            int nums=0;
+            for(int i=0;i<8;i++)
+            {
+                if(roundData.player[i].isLive==true) nums++;
+            }
+            if(nums==1) sendMsg(ALL_IN,0);
+            else sendMsg(FOLD,0);
+        }
+        /*ALL_IN
+        sendMsg(ALL_IN,0);*/
         LOG2F(filename,"INQUIRE OVER");
 
     } else  if ( strcmp (type, "flop/" )==0) { //公牌消息
@@ -259,7 +280,7 @@ int explMsg(char *msg) {
             else
             {
                 id = findIndex(id);
-                roundData.player[id].jetton+=num;d
+                roundData.player[id].jetton+=num;
             }
             p=p + strlen (p)+1;
         }
