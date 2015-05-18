@@ -119,12 +119,16 @@ int explMsg(char *msg) {
         LOG2F(filename,"HOLD!!!");
         roundData.gameStep = STEP_ONE;
         int selfIndex = roundData.selfIndex;
+        memset(argsMsg.colorNum,0,sizeof(argsMsg.colorNum));
+        memset(argsMsg.pointNum,0,sizeof(argsMsg.pointNum));
         for(int i=0; i<2; i++) {
             p = strtok(p, "\n" );
             char color[10],point[5];
             sscanf(p,"%s%s",color,point);
             roundData.player[selfIndex].handCard[i].color = findColor(color);
             roundData.player[selfIndex].handCard[i].point = findPoint(point);
+            argsMsg.colorNum[roundData.player[selfIndex].handCard[i].color]++;
+            argsMsg.pointNum[roundData.player[selfIndex].handCard[i].point]++;
             p = p + strlen (p)+1;
         }
         p = strtok(p, "\n" );//除去最后的结束标志
@@ -132,6 +136,8 @@ int explMsg(char *msg) {
         LOG2F(filename,"HOLD OVER!!!");
     } else  if ( strcmp (type, "inquire/" )==0) { //询问消息
         LOG2F(filename,"INQUIRE!!!");
+        int haveAllin = 0;
+        int nump=0;
         while(1)
         {
             p = strtok(p, "\n" );
@@ -146,14 +152,16 @@ int explMsg(char *msg) {
             roundData.player[id].bet = bet;
             roundData.player[id].action = findAction(action);
             if(roundData.player[id].action==FOLD) roundData.player[id].isLive=false;
+            if(roundData.player[id].action==ALL_IN) haveAllin =1;
             p = p + strlen (p)+1;
+            nump++;
         }
         p = strtok(p, "\n" );
         sscanf(p,"total pot: %d ",&roundData.poolSum);
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
-
+        roundData.playerNum = nump;
         /*
 
         此处接入AI算法
@@ -180,8 +188,101 @@ int explMsg(char *msg) {
             if(nums==1) sendMsg(ALL_IN,0);
             else {sendMsg(FOLD,0);roundData.player[roundData.selfIndex].isLive=false;}
         }*/
-        /*ALL_IN*/
-        sendMsg(ALL_IN,0);
+        /*ALL_IN
+        sendMsg(ALL_IN,0);*/
+         double handCardGailv[] =
+        {2.24,//一对10+
+        3.64,//一对10-
+        23.53,//同花
+        15.7,//连张
+        3.92,//同花顺
+        14.3,//10+单
+        };
+	int selfIndex = roundData.selfIndex;
+	int sameColor = 0;
+	int samePoint = 0;
+	int lianpai = 0;
+	double handGai = 100;
+	if(roundData.gameStep == STEP_ONE)
+	{
+	   int maxp = roundData.player[selfIndex].handCard[0].point>roundData.player[selfIndex].handCard[1].point?roundData.player[selfIndex].handCard[0].point:roundData.player[selfIndex].handCard[1].point;
+	    if(roundData.player[selfIndex].handCard[0].color == roundData.player[selfIndex].handCard[1].color)
+	       sameColor = 1;
+	    if(roundData.player[selfIndex].handCard[0].point == roundData.player[selfIndex].handCard[1].point)
+	       samePoint = 1;
+	    if(abs(roundData.player[selfIndex].handCard[0].point -roundData.player[selfIndex].handCard[1].point)==1)
+	       lianpai = 1;
+	    if(haveAllin == 1)
+		{
+		   if(samePoint==1 || (sameColor==1 && lianpai==1) || (roundData.player[selfIndex].handCard[0].point>12 && roundData.player[selfIndex].handCard[1].point>12)) sendMsg(ALL_IN,0);
+		   else sendMsg(FOLD,0);
+		}
+	    else
+		{
+		   if(samePoint + sameColor + lianpai > 0 || maxp>=10) sendMsg(RAISE,roundData.poolSum/3);
+		   else
+		   {
+			sendMsg(FOLD,0);
+		   }
+		}
+	}
+	else if(roundData.gameStep == STEP_TWO)
+	{
+		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1/*同花*/) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
+		int dui=0,three=0,sun=0,maxp=0;
+		for(int i=1;i<15;i++)
+		{
+			if(argsMsg.pointNum[i]==2) {++dui; maxp=i;}
+			else if(argsMsg.pointNum[i]==3) three++;
+			if(i<11 && argsMsg.pointNum[i]+argsMsg.pointNum[i+1]+argsMsg.pointNum[i+2]+argsMsg.pointNum[i+3]+argsMsg.pointNum[i+4]==5) sun=1;
+
+		}
+		if(argsMsg.pointNum[1]+argsMsg.pointNum[2]+argsMsg.pointNum[3]+argsMsg.pointNum[4]+argsMsg.pointNum[14]==5) sun=1;
+		if(sun==1 || (three==1 && dui==1)) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
+		if(haveAllin == 1)
+		{
+		   if(dui==2) sendMsg(CALL,0);
+		   sendMsg(FOLD,0);
+		}
+        else
+		{
+		    if(roundData.playerNum<=4 && dui!=0) sendMsg(RAISE,roundData.poolSum/10);
+		    else if(roundData.playerNum>4 && ((dui>=1 && maxp>10) || dui>=2)) sendMsg(RAISE,roundData.poolSum/10);
+		    else
+		    {
+		    	sendMsg(FOLD,0);
+		   }
+		}
+	}
+	else if(roundData.gameStep == STEP_THREE || roundData.gameStep == STEP_FOUR)
+	{
+		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1/*同花*/) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
+		int dui=0,three=0,sun=0,maxp=0;
+		for(int i=1;i<15;i++)
+		{
+			if(argsMsg.pointNum[i]==2) {++dui; maxp=i;}
+			else if(argsMsg.pointNum[i]==3) three++;
+			if(i<11 && argsMsg.pointNum[i]+argsMsg.pointNum[i+1]+argsMsg.pointNum[i+2]+argsMsg.pointNum[i+3]+argsMsg.pointNum[i+4]==5) sun=1;
+
+		}
+		if(argsMsg.pointNum[1]+argsMsg.pointNum[2]+argsMsg.pointNum[3]+argsMsg.pointNum[4]+argsMsg.pointNum[14]==5) sun=1;
+		if(sun==1 || (three==1 && dui==1)) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
+		if(haveAllin == 1)
+		{
+		   if(dui==2) sendMsg(CALL,0);
+		   sendMsg(FOLD,0);
+		}
+        else
+		{
+		    if(roundData.playerNum<=4 && dui!=0) sendMsg(CALL,roundData.poolSum/10);
+		    else if(roundData.playerNum>4 && (dui==2) )sendMsg(RAISE,roundData.poolSum/10);
+		    else
+		    {
+		    	sendMsg(FOLD,0);
+		    }
+		}
+	}
+
         LOG2F(filename,"INQUIRE OVER");
 
     } else  if ( strcmp (type, "flop/" )==0) { //公牌消息
@@ -194,6 +295,8 @@ int explMsg(char *msg) {
             sscanf(p,"%s%s",color,point);
             roundData.pubCard[i].color = findColor(color);
             roundData.pubCard[i].point = findPoint(point);
+            argsMsg.colorNum[roundData.pubCard[i].color]++;
+            argsMsg.pointNum[roundData.pubCard[i].point]++;
             p = p + strlen (p)+1;
         }
         p = strtok(p, "\n" );//除去最后的结束标志
@@ -208,6 +311,8 @@ int explMsg(char *msg) {
         sscanf(p,"%s%s",color,point);
         roundData.pubCard[3].color = findColor(color);
         roundData.pubCard[3].point = findPoint(point);
+        argsMsg.colorNum[roundData.pubCard[3].color]++;
+        argsMsg.pointNum[roundData.pubCard[3].point]++;
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
@@ -222,6 +327,8 @@ int explMsg(char *msg) {
         sscanf(p,"%s%s",color,point);
         roundData.pubCard[4].color = findColor(color);
         roundData.pubCard[4].point = findPoint(point);
+        argsMsg.colorNum[roundData.pubCard[4].color]++;
+        argsMsg.pointNum[roundData.pubCard[4].point]++;
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
