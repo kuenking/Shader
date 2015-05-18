@@ -159,7 +159,7 @@ int explMsg(char *msg) {
         此处接入AI算法
 
         */
-        /*random*/
+        /*random
         if(roundData.player[roundData.selfIndex].isLive==true)
         {
             srand(time(0));
@@ -168,7 +168,7 @@ int explMsg(char *msg) {
             LOG2F(filename,temp);
             sendMsg(t,roundData.blind);
             if(t==FOLD) roundData.player[roundData.selfIndex].isLive = false;
-        }
+        }*/
         /*FOLD
         if(roundData.player[roundData.selfIndex].isLive==true)
         {
@@ -180,8 +180,8 @@ int explMsg(char *msg) {
             if(nums==1) sendMsg(ALL_IN,0);
             else {sendMsg(FOLD,0);roundData.player[roundData.selfIndex].isLive=false;}
         }*/
-        /*ALL_IN
-        sendMsg(ALL_IN,0);*/
+        /*ALL_IN*/
+        sendMsg(ALL_IN,0);
         LOG2F(filename,"INQUIRE OVER");
 
     } else  if ( strcmp (type, "flop/" )==0) { //公牌消息
@@ -324,6 +324,12 @@ int conServer(char ** argv)
     struct sockaddr_in clentAddr;
     clentAddr.sin_family=AF_INET;
     clentAddr.sin_port=htons(argsMsg.localPort);
+     int flag=1,len=sizeof(int);
+    if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,  &flag, len) == -1)
+    {
+        LOG2F(filename,"FAILE setsockopt!!!");
+        return ADDR_ERROR;
+    }
     if(inet_pton(AF_INET,argsMsg.localIP,&clentAddr.sin_addr)<=0) { //将“点分十进制” －> “二进制整数”
         LOG2F(filename,"FAILE ADDLOCK!!!");
         return ADDR_ERROR;
