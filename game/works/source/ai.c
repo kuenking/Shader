@@ -102,7 +102,7 @@ void stepOneAI() {
     point2=roundData.player[roundData.selfIndex].handCard[1].point;
     color1=roundData.player[roundData.selfIndex].handCard[0].color;
     color2=roundData.player[roundData.selfIndex].handCard[1].color;
-    static bool flag=false;
+    //static bool flag=false;
     double p=0.0f;//本手牌概率
     if(point1<point2)//保证point1>point2
     {

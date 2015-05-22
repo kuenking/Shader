@@ -51,25 +51,25 @@ int explMsg(char *msg) {
         roundData.poolSum=0;
         //获取庄家信息，存入位置0
         p = strtok(p, "\n" );//得到一行消息
-        sscanf(p,"%s%d%d%d",temp,&roundData.player[0].ID,&roundData.player[0].jetton,&roundData.player[0].money);
-        roundData.player[0].isLive = true;
+        sscanf(p,"%s%d%d%d",temp,&roundData.player[5].ID,&roundData.player[5].jetton,&roundData.player[5].money);
+        roundData.player[5].isLive = true;
         p = p + strlen(p) + 1;
         //小盲注玩家信息
         p = strtok(p,"\n");
-        sscanf(p,"%s%s%d%d%d",temp,temp,&roundData.player[1].ID,&roundData.player[1].jetton,&roundData.player[1].money);
+        sscanf(p,"%s%s%d%d%d",temp,temp,&roundData.player[6].ID,&roundData.player[6].jetton,&roundData.player[6].money);
         p = p + strlen(p) + 1;
-        roundData.player[1].isLive = true;
+        roundData.player[6].isLive = true;
         //判断是否有大盲注玩家
-
-        int num = 2;
+	int tempNum=0;
         sscanf(p,"%s",temp);
         if (strcmp(temp, "big" )==0) {
             p = strtok (p,"\n");
-            sscanf (p,"%s%s%d%d%d",temp,temp,&roundData.player[num].ID,&roundData.player[num].jetton,&roundData.player[num].money);
-            roundData.player[num].isLive = true;
-            ++num;
+            sscanf (p,"%s%s%d%d%d",temp,temp,&roundData.player[7].ID,&roundData.player[7].jetton,&roundData.player[7].money);
+            roundData.player[7].isLive = true;
+            ++tempNum;
             p = p + strlen(p)+1;
         }
+	int num = 0;
         //所有玩家信息
         while (1) {
             p = strtok (p,"\n");
@@ -86,7 +86,10 @@ int explMsg(char *msg) {
         }
         roundData.selfIndex = findIndex(argsMsg.ID);
         //玩家数量
-        roundData.playerNum=num;
+        roundData.playerNum=num+2+tempNum;
+	roundData.player[roundData.playerNum-1]=roundData.player[7];
+	roundData.player[roundData.playerNum-2]=roundData.player[6];
+	roundData.player[roundData.playerNum-3]=roundData.player[5];
         //局数+1
         ++roundData.roundNums;
         //公共牌为0
@@ -137,7 +140,7 @@ int explMsg(char *msg) {
         LOG2F(filename,"HOLD OVER!!!");
     } else  if ( strcmp (type, "inquire/" )==0) { //询问消息
         LOG2F(filename,"INQUIRE!!!");
-        int haveAllin = 0;
+       // int haveAllin = 0;
         int nump=0;
         roundData.needBet = 0;
         while(1)
