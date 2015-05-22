@@ -112,6 +112,7 @@ int explMsg(char *msg) {
             id = findIndex(id);
             roundData.player[id].bet = bet;
             roundData.player[id].jetton -= bet;//筹码减少
+            roundData.blind = bet;//大盲注金额
             p = p + strlen (p)+1;
         }
         LOG2F(filename,"BLIND OVER!!!");
@@ -138,6 +139,7 @@ int explMsg(char *msg) {
         LOG2F(filename,"INQUIRE!!!");
         int haveAllin = 0;
         int nump=0;
+        roundData.needBet = 0;
         while(1)
         {
             p = strtok(p, "\n" );
@@ -147,26 +149,28 @@ int explMsg(char *msg) {
             char action[20];	//本手牌已行动过的所有玩家（包括被询问者和盲注）的id,手中筹码、剩余金币数、本手牌累计投注额、及最近的一次有效action，按逆时针座次由近及远排列，上家排在第一个
             sscanf(p,"%d%d%d%d%s",&id,&je,&mo,&bet,action);
             id = findIndex(id);
+            roundData.player[id].action = findAction(action);
+            if(roundData.player[id].action==FOLD) roundData.player[id].isLive=false;//如果玩家弃牌，以后的action都一样
             roundData.player[id].jetton = je;
             roundData.player[id].money = mo;
+            roundData.player[id].roundBet = bet - roundData.player[id].bet;//本轮下注
             roundData.player[id].bet = bet;
-            roundData.player[id].action = findAction(action);
-            if(roundData.player[id].action==FOLD) roundData.player[id].isLive=false;
-            if(roundData.player[id].action==ALL_IN) haveAllin =1;
-            p = p + strlen (p)+1;
+            roundData.needBet = roundData.needBet > roundData.player[id].roundBet?roundData.needBet:roundData.player[id].roundBet;
+            p = p + strlen (p) + 1;
             nump++;
         }
         p = strtok(p, "\n" );
-        sscanf(p,"total pot: %d ",&roundData.poolSum);
+        sscanf(p,"total pot: %d ",&roundData.poolSum);//当前池底总金额
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
-        roundData.playerNum = nump;
+        roundData.playerNum = nump;//玩家总数
         /*
 
         此处接入AI算法
 
         */
+        ai();
         /*random
         if(roundData.player[roundData.selfIndex].isLive==true)
         {
@@ -190,22 +194,15 @@ int explMsg(char *msg) {
         }*/
         /*ALL_IN
         sendMsg(ALL_IN,0);*/
-         double handCardGailv[] =
-        {2.24,//一对10+
-        3.64,//一对10-
-        23.53,//同花
-        15.7,//连张
-        3.92,//同花顺
-        14.3,//10+单
-        };
-	int selfIndex = roundData.selfIndex;
+
+	/*int selfIndex = roundData.selfIndex;
 	int sameColor = 0;
 	int samePoint = 0;
 	int lianpai = 0;
 	double handGai = 100;
 	if(roundData.gameStep == STEP_ONE)
 	{
-	   int maxp = roundData.player[selfIndex].handCard[0].point>roundData.player[selfIndex].handCard[1].point?roundData.player[selfIndex].handCard[0].point:roundData.player[selfIndex].handCard[1].point;
+	    int maxp = roundData.player[selfIndex].handCard[0].point>roundData.player[selfIndex].handCard[1].point?roundData.player[selfIndex].handCard[0].point:roundData.player[selfIndex].handCard[1].point;
 	    if(roundData.player[selfIndex].handCard[0].color == roundData.player[selfIndex].handCard[1].color)
 	       sameColor = 1;
 	    if(roundData.player[selfIndex].handCard[0].point == roundData.player[selfIndex].handCard[1].point)
@@ -228,7 +225,7 @@ int explMsg(char *msg) {
 	}
 	else if(roundData.gameStep == STEP_TWO)
 	{
-		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1/*同花*/) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
+		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
 		int dui=0,three=0,sun=0,maxp=0;
 		for(int i=1;i<15;i++)
 		{
@@ -256,7 +253,7 @@ int explMsg(char *msg) {
 	}
 	else if(roundData.gameStep == STEP_THREE || roundData.gameStep == STEP_FOUR)
 	{
-		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1/*同花*/) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
+		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
 		int dui=0,three=0,sun=0,maxp=0;
 		for(int i=1;i<15;i++)
 		{
@@ -281,7 +278,7 @@ int explMsg(char *msg) {
 		    	sendMsg(FOLD,0);
 		    }
 		}
-	}
+	}*/
 
         LOG2F(filename,"INQUIRE OVER");
 

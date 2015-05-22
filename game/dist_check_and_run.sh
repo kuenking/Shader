@@ -19,7 +19,7 @@ zipsize=$(du -m -s works.tar.gz | awk '{print $1}')
 if [[ $zipsize -ge 10 ]]; then
   echo "the archive ($zipsize M) of the works is beyoung the limit( 10 M) "
   echo "you can "
-  echo " 1. clean the tmp file during the build process or "
+  echo " 1. clean tdhe tmp file during the build process or "
   echo " 2. remove libarys and file those is no need any more or"
   echo " 3. rework you code"
   exit
@@ -56,7 +56,7 @@ popd >/dev/null
 echo "start your program"
 pushd . >/dev/null
 cd works/target
-for i in 1 2 3 4 5 6
+for i in 1 2 3 4 5 6 7 8
 do
   nohup ./game_$i 127.0.0.1 6000 127.0.0.$i 600$i $i$i$i$i 0</dev/null 1>/dev/null 2>/dev/null &
 done

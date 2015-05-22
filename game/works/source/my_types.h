@@ -47,8 +47,6 @@ typedef struct {
     int bestType;
     //本轮下注
     int roundBet;
-    //本局下注
-    int Currbet;
     //手牌列表
     Card handCard[2];
     //获胜局数
@@ -83,6 +81,7 @@ typedef struct {
     int selfIndex;
     //盲注,最小跟注
     int blind;
+    int needBet;//最少要跟注
     //当前池底总金额
     int poolSum;
     //当前游戏阶段
