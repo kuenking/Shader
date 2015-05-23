@@ -64,7 +64,7 @@ int IsVeryStrong()
 }
 int IsStrong()
 {
-    if((point1==point2 && point1>=9)||(point1+point2 == 26) || (color1==color2 && point1+point2==25))
+    if((point1==point2 && point1>=9)||(point1+point2 >= 26) || (color1==color2 && point1+point2>=25))
     {
         return 1;
     }
@@ -72,7 +72,7 @@ int IsStrong()
 }
 int IsMid()
 {
-    if(point1+point2==25 || (point1==14&&point2==10))//AJo,AT,KQ
+    if(point1+point2==25 || (point1==14&&point2>=10))//AJo,AT,KQ
     {
         return 1;
     }
@@ -81,7 +81,7 @@ int IsMid()
 int IsLikeStrong()//强投机牌
 {//88-22 / KJs k-10s,QJs,QTs,JTs,T9s
     if(point1==point2 ) return 1;
-    if(color1==color2 && (point2>=10 || (point1==10 && point2==9))) return 1;
+    if(color1==color2 && (point2>=10 || (point1>=10 && point2>=9))) return 1;
     return 0;
 }
 int IsBlend()
@@ -264,389 +264,161 @@ void stepOneAI() {
     }*/
 }
 
-void stepTwoAI() {
-    int point1=roundData.player[roundData.selfIndex].handCard[0].point;
-    int point2=roundData.player[roundData.selfIndex].handCard[1].point;
-    int pubPoint[3];
-    pubPoint[0]=roundData.pubCard[0].point;
-    pubPoint[1]=roundData.pubCard[1].point;
-    pubPoint[2]=roundData.pubCard[2].point;
-    int color1=roundData.player[roundData.selfIndex].handCard[0].color;
-    int color2=roundData.player[roundData.selfIndex].handCard[1].color;
-    int pubColor[3];
-    pubColor[0]=roundData.pubCard[0].color;
-    pubColor[1]=roundData.pubCard[1].color;
-    pubColor[2]=roundData.pubCard[2].color;
-    bool flag=false;
-    int samep1=0;
-    int samep2=0;
-    int samec1=0;
-    int samec2=0;
-    int link1=0;
-    int link2=0;
-    for(int i=0; i<3; ++i) {
-        if(pubPoint[i]==point1)
-            ++samep1;
-        if(pubPoint[i]==point2)
-            ++samep2;
-        if(pubColor[i]==color1)
-            ++samec1;
-        if(pubColor[i]==color2)
-            ++samec2;
-        if(abs(pubPoint[i]-point1)<5)
-            ++link1;
-        if(abs(pubPoint[i]-point2)<5)
-            ++link2;
+/*判断牌型*/
+int cardStyle(){
+  int point[7];
+  point[0]=roundData.player[roundData.selfIndex].handCard[0].point;
+  point[1]=roundData.player[roundData.selfIndex].handCard[1].point;
+  for(int i=0;i<roundData.pubCardNum;++i){
+    point[2+i]=roundData.pubCard[i].point;
+  }
+  int color[7];
+  color[0]=roundData.player[roundData.selfIndex].handCard[0].color;
+  color[1]=roundData.player[roundData.selfIndex].handCard[1].color;
+  for(int i=0;i<roundData.pubCardNum;++i){
+    color[2+i]=roundData.pubCard[i].color;
+  }
+  //排序
+  for(int i=0;i<roundData.pubCardNum+2;++i){
+    for(int j=0;j<i;++j){
+      if(point[j]>point[j+1]){
+        int temp=point[j];
+        point[j]=point[j+1];
+        point[j+1]=temp;
+        temp=color[j];
+        color[j]=color[j+1];
+        color[j+1]=temp;
+      }
     }
-    if(samep1!=0&&samep2!=0) {
-        if(point1==point2) {
-            if(samep1==2) {
-                sendMsg(ALL_IN,0);
-                return;
-            } else {
-                int t=roundData.player[roundData.selfIndex].jetton/5;
-                if(flag==false) {
-                    sendMsg(RAISE,t);
-                    flag=true;
-                } else {
-                    sendMsg(CALL,0);
-                    flag=false;
-                }
-                return;
-            }
-        } else {
-            int t=roundData.player[roundData.selfIndex].jetton/10;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                flag=false;
-            }
-            return;
-        }
-    } else {
-        if(samep1+samep2==3) {
-            int t=roundData.player[roundData.selfIndex].jetton/7;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                flag=false;
-            }
-            return;
-        } else if(samep1+samep2==2) {
-            int t=roundData.player[roundData.selfIndex].jetton/10;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                return;
-            }
-            return;
-        } else {
-            sendMsg(CALL,0);
-            return;
-        }
+  }
+  //同花
+  int sameColor=1;
+  for(int i=0;i<roundData.pubCardNum+1;++i){
+    if(color[i]!=color[i+1]){
+      sameColor=0;
+      break;
     }
-    if(point1==point2) {
-        sendMsg(CALL,0);
-        return;
+  }
+  //顺子
+  int link=1;
+  for(int i=0;i<roundData.pubCardNum+1;++i){
+    if(point[i]+1!=point[i+1]){
+      link=0;
+      break;
     }
-    if(samec1!=0&&samep2!=0) {
-        if(samec1==samec2) {
-            if(samec1==3) {
-                sendMsg(ALL_IN,0);
-                return;
-            } else {
-                int t=roundData.player[roundData.selfIndex].jetton/15;
-                if(flag==false) {
-                    sendMsg(RAISE,t);
-                    flag=true;
-                } else {
-                    sendMsg(CALL,0);
-                    flag=false;
-                }
-                return;
-            }
-        } else {
-            sendMsg(CALL,0);
-            return;
-        }
-    } else {
-        if(samec1==3) {
-            sendMsg(CALL,0);
-            return;
-        }
+  }
+  //对子个数（三条包含一个对子，金刚包含两对）
+  int twoPairNum=0;
+  for(int i=0;i<roundData.pubCardNum+1;++i){
+    if(point[i]==point[i+1]){
+      ++twoPairNum;
+      ++i;
     }
-    if(abs(point1-point2)<5) {
-        if(link1==3||link2==3) {
-            sendMsg(CALL,0);
-            flag=true;
-        }
+  }
+  //三条个数
+  int threePairNum=0;
+  for(int i=0;i<roundData.pubCardNum;++i){
+    if(point[i]==point[i+1]&&point[i]==point[i+2]){
+      ++threePairNum;
+      ++i;
+      ++i;
     }
-    sendMsg(FOLD,0);
+  }
+  //是否是金刚
+  int kingKong=0;
+  for(int i=0;i<roundData.pubCardNum-1;++i){
+    if(point[i]==point[i+1]&&point[i]==point[i+2]&&point[i]==point[i+3]){
+      kingKong=0;
+    }
+  }
+  if(sameColor){
+    if(link){
+      //同花顺
+      return STRAIGHT_FLUSH;
+    }else{
+      //同花
+      return STRAIGHT;
+    }
+  }
+  if(link){
+    //顺子
+    return FLUSH;
+  }
+  if(kingKong){
+    return FOUR_OF_A_KIND;
+  }
+  if(threePairNum>0){
+    if(twoPairNum>threePairNum){
+      return FULL_HOUSE;
+    }else{
+      return THREE_OF_A_KIND;
+    }
+  }
+  if(twoPairNum>=2){
+    return TWO_PAIR;
+  }
+  return HIGH_CARD;
 }
 
 
-void stepThreeAI() {
-    int point1=roundData.player[roundData.selfIndex].handCard[0].point;
-    int point2=roundData.player[roundData.selfIndex].handCard[1].point;
-    int pubPoint[4];
-    pubPoint[0]=roundData.pubCard[0].point;
-    pubPoint[1]=roundData.pubCard[1].point;
-    pubPoint[2]=roundData.pubCard[2].point;
-    pubPoint[3]=roundData.pubCard[3].point;
-    int color1=roundData.player[roundData.selfIndex].handCard[0].color;
-    int color2=roundData.player[roundData.selfIndex].handCard[1].color;
-    int pubColor[4];
-    pubColor[0]=roundData.pubCard[0].color;
-    pubColor[1]=roundData.pubCard[1].color;
-    pubColor[2]=roundData.pubCard[2].color;
-    pubColor[3]=roundData.pubCard[3].color;
-    bool flag=false;
-    int samep1=0;
-    int samep2=0;
-    int samec1=0;
-    int samec2=0;
-    int link1=0;
-    int link2=0;
-    for(int i=0; i<4; ++i) {
-        if(pubPoint[i]==point1)
-            ++samep1;
-        if(pubPoint[i]==point2)
-            ++samep2;
-        if(pubColor[i]==color1)
-            ++samec1;
-        if(pubColor[i]==color2)
-            ++samec2;
-        if(abs(pubPoint[i]-point1)<5)
-            ++link1;
-        if(abs(pubPoint[i]-point2)<5)
-            ++link2;
+void stepTwoAI(){
+  int myCardStyle=cardStyle();
+  static bool flag=true;
+  if(myCardStyle==STRAIGHT_FLUSH){
+    sendMsg(ALL_IN,0);
+  }else if(myCardStyle==FOUR_OF_A_KIND){
+    sendMsg(ALL_IN,0);
+  }else if(myCardStyle==FULL_HOUSE){
+    if(flag){
+      sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton/2);
+      flag=false;
+    }else{
+      sendMsg(CALL,0);
+      flag=true;
     }
-    if(samep1!=0&&samep2!=0) {
-        if(point1==point2) {
-            if(samep1==2) {
-                sendMsg(ALL_IN,0);
-                return;
-            } else {
-                int t=roundData.player[roundData.selfIndex].jetton/5;
-                if(flag==false) {
-                    sendMsg(RAISE,t);
-                    flag=true;
-                } else {
-                    sendMsg(CALL,0);
-                    flag=false;
-                }
-                return;
-            }
-        } else {
-            int t=roundData.player[roundData.selfIndex].jetton/10;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                flag=false;
-            }
-            return;
-        }
-    } else {
-        if(samep1+samep2==3) {
-            int t=roundData.player[roundData.selfIndex].jetton/7;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                flag=false;
-            }
-            return;
-        } else if(samep1+samep2==2) {
-            int t=roundData.player[roundData.selfIndex].jetton/10;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                return;
-            }
-            return;
-        } else {
-            sendMsg(CALL,0);
-            return;
-        }
+  }else if(myCardStyle==FLUSH){
+    if(flag){
+      sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton/3);
+      flag=false;
+    }else{
+      sendMsg(CALL,0);
+      flag=true;
     }
-    if(point1==point2) {
-        sendMsg(CALL,0);
-        return;
+  }else if(myCardStyle==STRAIGHT){
+    if(flag){
+      sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton/4);
+      flag=false;
+    }else{
+      sendMsg(CALL,0);
+      flag=true;
     }
-    if(samec1!=0&&samep2!=0) {
-        if(samec1==samec2) {
-            if(samec1>=3) {
-                sendMsg(ALL_IN,0);
-                return;
-            } else {
-                int t=roundData.player[roundData.selfIndex].jetton/15;
-                if(flag==false) {
-                    sendMsg(RAISE,t);
-                    flag=true;
-                } else {
-                    sendMsg(CALL,0);
-                    flag=false;
-                }
-                return;
-            }
-        } else {
-            sendMsg(CALL,0);
-            return;
-        }
-    } else {
-        if(samec1==3) {
-            sendMsg(CALL,0);
-            return;
-        }
+  }else if(myCardStyle==THREE_OF_A_KIND){
+    if(flag){
+      sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton/5);
+      flag=false;
+    }else{
+      sendMsg(CALL,0);
+      flag=true;
     }
-    if(abs(point1-point2)<5) {
-        if(link1==3||link2==3) {
-            sendMsg(CALL,0);
-            flag=true;
-        }
+  }else if(myCardStyle==TWO_PAIR){
+    if(flag){
+      sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton/10);
+      flag=false;
+    }else{
+      sendMsg(CALL,0);
+      flag=true;
     }
-    sendMsg(FOLD,0);
+  }else if(myCardStyle==ONE_PAIR){
+    sendMsg(CALL,0);
+  }else{
+    stepOneAI();
+  }
 }
 
+void stepThreeAI(){
+  stepTwoAI();
+}
 
-
-void stepFourAI() {
-    int point1=roundData.player[roundData.selfIndex].handCard[0].point;
-    int point2=roundData.player[roundData.selfIndex].handCard[1].point;
-    int pubPoint[5];
-    pubPoint[0]=roundData.pubCard[0].point;
-    pubPoint[1]=roundData.pubCard[1].point;
-    pubPoint[2]=roundData.pubCard[2].point;
-    pubPoint[3]=roundData.pubCard[3].point;
-    pubPoint[4]=roundData.pubCard[4].point;
-    int color1=roundData.player[roundData.selfIndex].handCard[0].color;
-    int color2=roundData.player[roundData.selfIndex].handCard[1].color;
-    int pubColor[5];
-    pubColor[0]=roundData.pubCard[0].color;
-    pubColor[1]=roundData.pubCard[1].color;
-    pubColor[2]=roundData.pubCard[2].color;
-    pubColor[3]=roundData.pubCard[3].color;
-    pubColor[4]=roundData.pubCard[4].color;
-    bool flag=false;
-    int samep1=0;
-    int samep2=0;
-    int samec1=0;
-    int samec2=0;
-    int link1=0;
-    int link2=0;
-    for(int i=0; i<5; ++i) {
-        if(pubPoint[i]==point1)
-            ++samep1;
-        if(pubPoint[i]==point2)
-            ++samep2;
-        if(pubColor[i]==color1)
-            ++samec1;
-        if(pubColor[i]==color2)
-            ++samec2;
-        if(abs(pubPoint[i]-point1)<5)
-            ++link1;
-        if(abs(pubPoint[i]-point2)<5)
-            ++link2;
-    }
-    if(samep1!=0&&samep2!=0) {
-        if(point1==point2) {
-            if(samep1==2) {
-                sendMsg(ALL_IN,0);
-                return;
-            } else {
-                int t=roundData.player[roundData.selfIndex].jetton/5;
-                if(flag==false) {
-                    sendMsg(RAISE,t);
-                    flag=true;
-                } else {
-                    sendMsg(CALL,0);
-                    flag=false;
-                }
-                return;
-            }
-        } else {
-            int t=roundData.player[roundData.selfIndex].jetton/10;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                flag=false;
-            }
-            return;
-        }
-    } else {
-        if(samep1+samep2>=3) {
-            int t=roundData.player[roundData.selfIndex].jetton/7;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                flag=false;
-            }
-            return;
-        } else if(samep1+samep2==2) {
-            int t=roundData.player[roundData.selfIndex].jetton/10;
-            if(flag==false) {
-                sendMsg(RAISE,t);
-                flag=true;
-            } else {
-                sendMsg(CALL,0);
-                return;
-            }
-            return;
-        } else {
-            sendMsg(CALL,0);
-            return;
-        }
-    }
-    if(point1==point2) {
-        sendMsg(CALL,0);
-        return;
-    }
-    if(samec1!=0&&samep2!=0) {
-        if(samec1==samec2) {
-            if(samec1==3) {
-                sendMsg(ALL_IN,0);
-                return;
-            } else {
-                int t=roundData.player[roundData.selfIndex].jetton/15;
-                if(flag==false) {
-                    sendMsg(RAISE,t);
-                    flag=true;
-                } else {
-                    sendMsg(CALL,0);
-                    flag=false;
-                }
-                return;
-            }
-        } else {
-            sendMsg(CALL,0);
-            return;
-        }
-    } else {
-        if(samec1==3) {
-            sendMsg(CALL,0);
-            return;
-        }
-    }
-    if(abs(point1-point2)<5) {
-        if(link1==3||link2==3) {
-            sendMsg(CALL,0);
-            flag=true;
-        }
-    }
-    sendMsg(FOLD,0);
+void stepFourAI(){
+  stepTwoAI();
 }
