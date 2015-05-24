@@ -109,139 +109,121 @@ void stepOneAI() {
         point1 = point1^point2;
         point2 = point1^point2;
         point1 = point1^point2;
+        color1=color1^color2;
+        color2=color1^color2;
+        color1=color1^color2;
     }
      RU(char filename[100];
        sprintf(filename,"log_%d.txt",argsMsg.ID););
     RU(char c[200];sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
     LOG2F(filename,c);
-    if(point1 == point2 )
-    {
-        p = sub[point1][roundData.playerNum];
-    }
-    else
-    {
-        if(point1 == 14)
-        {
-            p = Ax[point2][roundData.playerNum];
-        }
-        if(color1==color2 && point1+point2>=24)
-        {
-            p=3.02;//跟牌
-        }
+    if(point1 == point2 ){
+      //不算自身
+      p = sub[point1][roundData.playerNum-1];
+    }else{
+      if(point1 == 14){
+        p = Ax[point2][roundData.playerNum-1];
+      }else if(color1==color2 && point1+point2>=24){
+        p=3.02;//跟牌
+      }
 
     }
     RU(sprintf(c,"@@@@@@p:%f@@@@@@@@",p););
     LOG2F(filename,c);
-    int selfIndex = roundData.selfIndex,raiseMoney=0;
+    int selfIndex = roundData.selfIndex;
+    int raiseMoney=0;
     if(p!=0)//计算加注
     {
         p=1-p/100;
-        raiseMoney = (p * roundData.poolSum-roundData.player[selfIndex].bet)/(1-p);//最大下注不会亏
+        /*
+          (所有-已下注)*胜率>=(已下注+将下注)*败率
+          将下注<=((所有-已下注)*胜率)/败率-已下注
+         */
+        //raiseMoney = (p * roundData.poolSum-roundData.player[selfIndex].bet)/(1-p);//最大下注不会亏
+        raiseMoney=(roundData.poolSum-roundData.player[selfIndex].bet)*p/(1-p)-roundData.player[selfIndex].bet;//加注后总额
     }else raiseMoney = 0;
     RU(sprintf(c,"@@@@@@selfIndex:%d raiseMoney:%d@@@@@@@@",selfIndex,raiseMoney););
     LOG2F(filename,c);
     //条件
     int callNum=0,raiseNum=0,small=0,big=0;
+    //最后一家下注
+    int lastMoney=0;
     if(selfIndex == 0) small=1;
     else if(selfIndex == 1) big=1;
-    else
-    {
-        for(int i=2;i<selfIndex;i++)
-        {
-            if(roundData.player[i].action==CALL) ++callNum;
-            if(roundData.player[i].action==RAISE || roundData.player[i].action==ALL_IN) ++raiseNum;
+    else{
+      for(int i=2;i<selfIndex;i++){
+        if(roundData.player[i].action==CALL){
+          ++callNum;
+          lastMoney=roundData.player[i].roundBet;
         }
+        if(roundData.player[i].action==RAISE || roundData.player[i].action==ALL_IN){
+          ++raiseNum;
+          lastMoney=roundData.player[i].roundBet;
+        }
+      }
     }
 
     //判断
-    if(IsVeryStrong())
-    {
-        LOG2F(filename,"VeryStrong");
-        sendMsg(RAISE,raiseMoney);
-    }
-    else if(IsStrong())
-    {
-        LOG2F(filename,"Strong");
-        if(raiseNum >= 2) sendMsg(FOLD,0);
-        else if(raiseNum==1 && callNum >=1) sendMsg(CALL,0);
-        else if(big==1 || small==1) sendMsg(RAISE,raiseMoney);
-        else if(raiseNum == 1 && callNum==0 && selfIndex<=3) sendMsg(FOLD,0);
-        else sendMsg(RAISE,raiseMoney);
-    }
-    else if(IsMid())
-    {
-        LOG2F(filename,"Mid");
-        if(raiseNum==0)
-        {
-            if(selfIndex==2 || selfIndex==3) sendMsg(FOLD,0);
-            else sendMsg(RAISE,raiseMoney);
-        }
-        else if(raiseNum==1 && callNum==0)
-        {
-            if(big==1) sendMsg(CALL,0);
-            else sendMsg(FOLD,0);
-        }
-        else if(raiseNum==1 && callNum>0)
-        {
-            if(big==1 || (color1==color2 && point1==13 && point2==12)) sendMsg(CALL,0);
-            else sendMsg(FOLD,0);
-        }
-    }
-    else if(IsLikeStrong())//强投机牌
-    {
-        LOG2F(filename,"LikeStrong");
-        if(callNum==0 && raiseNum==0) //全弃牌
-        {
-            if(big==1 || small==1 || selfIndex>6) sendMsg(RAISE,raiseMoney);
-            else sendMsg(FOLD,0);
-        }
-        else if(raiseNum==0 && callNum==1) //一个玩家跟注
-        {
-            if(big==1) sendMsg(CHECK,0);
-            else if(small==1 || selfIndex>6) sendMsg(CALL,0);
-            else sendMsg(FOLD,0);
-        }
-        else if(raiseNum==0 && callNum>1)
-        {
-            if(big==1) sendMsg(CHECK,0);
-            else sendMsg(CALL,0);
-        }
-        else if(raiseNum==1 && callNum==0)
-        {
-            if(big==1 ) sendMsg(CALL,0);
-            else sendMsg(FOLD,0);
-        }
-        else if(raiseNum==1 && callNum>0)
-        {
-            sendMsg(CALL,0);
-        }
+    if(IsVeryStrong()){
+      LOG2F(filename,"VeryStrong");
+      //加注是指在之前玩家的基础上
+      sendMsg(RAISE,raiseMoney-lastMoney);
+    }else if(IsStrong()){
+      LOG2F(filename,"Strong");
+      if(raiseNum >= 2) sendMsg(FOLD,0);
+      else if(raiseNum==1 && callNum >=1) sendMsg(CALL,0);
+      else if(big==1 || small==1) sendMsg(RAISE,raiseMoney-lastMoney);
+      else if(raiseNum == 1 && callNum==0 && selfIndex<=3) sendMsg(FOLD,0);
+      else sendMsg(RAISE,raiseMoney-lastMoney);
+    }else if(IsMid()){
+      LOG2F(filename,"Mid");
+      if(raiseNum==0){
+        if(selfIndex==2 || selfIndex==3) sendMsg(FOLD,0);
+        else sendMsg(RAISE,raiseMoney-lastMoney);
+      }
+      else if(raiseNum==1 && callNum==0){
+        if(big==1) sendMsg(CALL,0);
         else sendMsg(FOLD,0);
-    }
-    else if(IsBlend())//混合牌
-    {
-        LOG2F(filename,"Blend");
-          if(callNum==0 && raiseNum==0) //全弃牌
-        {
-            if(big==1 || small==1 || selfIndex>6) sendMsg(RAISE,raiseMoney);
-            else sendMsg(FOLD,0);
-        }
-        else if(raiseNum==0 && callNum==1) //一个玩家跟注
-        {
-            if(big==1) sendMsg(CHECK,0);
-            else if(small==1) sendMsg(CALL,0);
-            else sendMsg(FOLD,0);
-        }
-        else if(raiseNum==0 && callNum>1)
-        {
-            if(big==1) sendMsg(CHECK,0);
-            else if(small==1 && selfIndex>6)sendMsg(CALL,0);
-            else sendMsg(FOLD,0);
-        }
+      }else if(raiseNum==1 && callNum>0){
+        if(big==1 || (color1==color2 && point1==13 && point2==12)) sendMsg(CALL,0);
         else sendMsg(FOLD,0);
-    }else
-    {
-        LOG2F(filename,"GAOPAI");
-        sendMsg(FOLD,0);
+      }
+    }else if(IsLikeStrong()){//强投机牌
+      LOG2F(filename,"LikeStrong");
+      if(callNum==0 && raiseNum==0){ //全弃牌
+        if(big==1 || small==1 || selfIndex>6) sendMsg(RAISE,raiseMoney);
+        else sendMsg(FOLD,0);
+      }else if(raiseNum==0 && callNum==1){ //一个玩家跟注
+        if(big==1) sendMsg(CHECK,0);
+        else if(small==1 || selfIndex>6) sendMsg(CALL,0);
+        else sendMsg(FOLD,0);
+      }else if(raiseNum==0 && callNum>1){
+        if(big==1) sendMsg(CHECK,0);
+        else sendMsg(CALL,0);
+      }else if(raiseNum==1 && callNum==0){
+        if(big==1 ) sendMsg(CALL,0);
+        else sendMsg(FOLD,0);
+      } else if(raiseNum==1 && callNum>0){
+        sendMsg(CALL,0);
+      }else sendMsg(FOLD,0);
+    }else if(IsBlend()){//混合牌
+      LOG2F(filename,"Blend");
+      if(callNum==0 && raiseNum==0) {//全弃牌
+        if(big==1 || small==1 || selfIndex>6) sendMsg(RAISE,raiseMoney-lastMoney);
+        else sendMsg(FOLD,0);
+      }else if(raiseNum==0 && callNum==1){ //一个玩家跟注
+        if(big==1) sendMsg(CHECK,0);
+        else if(small==1) sendMsg(CALL,0);
+        else sendMsg(FOLD,0);
+      }else if(raiseNum==0 && callNum>1) {
+        if(big==1) sendMsg(CHECK,0);
+        else if(small==1 && selfIndex>6)sendMsg(CALL,0);
+        else sendMsg(FOLD,0);
+      }
+      else sendMsg(FOLD,0);
+    }else{
+      LOG2F(filename,"GAOPAI");
+      sendMsg(FOLD,0);
     }
     LOG2F(filename,"AI_1 OVER!!!!!");
     /*if(point1==point2) {
@@ -411,7 +393,14 @@ void stepTwoAI(){
   }else if(myCardStyle==ONE_PAIR){
     sendMsg(CALL,0);
   }else{
-    stepOneAI();
+    int point[2];
+    point[0]=roundData.player[roundData.selfIndex].handCard[0].point;
+    point[1]=roundData.player[roundData.selfIndex].handCard[1].point;
+    if(point[0]+point[1]>=20){
+      sendMsg(CALL,0);
+    }else{
+      sendMsg(FOLD,0);
+    }
   }
 }
 
