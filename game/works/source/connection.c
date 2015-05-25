@@ -51,20 +51,23 @@ int explMsg(char *msg) {
         roundData.poolSum=0;
         //获取庄家信息，存入位置0
         p = strtok(p, "\n" );//得到一行消息
-        sscanf(p,"%s%d%d%d",temp,&roundData.player[5].ID,&roundData.player[5].jetton,&roundData.player[5].money);
-        roundData.player[5].isLive = true;
+        Player player_temp_1;
+        sscanf(p,"%s%d%d%d",temp,&player_temp_1.ID,&player_temp_1.jetton,&player_temp_1.money);
+        player_temp_1.isLive = true;
         p = p + strlen(p) + 1;
         //小盲注玩家信息
         p = strtok(p,"\n");
-        sscanf(p,"%s%s%d%d%d",temp,temp,&roundData.player[6].ID,&roundData.player[6].jetton,&roundData.player[6].money);
+        Player player_temp_2;
+        sscanf(p,"%s%d%d%d",temp,&player_temp_2.ID,&player_temp_2.jetton,&player_temp_2.money);
+        player_temp_2.isLive = true;
         p = p + strlen(p) + 1;
-        roundData.player[6].isLive = true;
         //判断是否有大盲注玩家
 	int tempNum=0;
         sscanf(p,"%s",temp);
+        Player player_temp_3;
         if (strcmp(temp, "big" )==0) {
             p = strtok (p,"\n");
-            sscanf (p,"%s%s%d%d%d",temp,temp,&roundData.player[7].ID,&roundData.player[7].jetton,&roundData.player[7].money);
+            sscanf (p,"%s%s%d%d%d",temp,temp,&player_temp_3.ID,&player_temp_3.jetton,&player_temp_3.money);
             roundData.player[7].isLive = true;
             ++tempNum;
             p = p + strlen(p)+1;
@@ -86,10 +89,12 @@ int explMsg(char *msg) {
         }
         roundData.selfIndex = findIndex(argsMsg.ID);
         //玩家数量
-        roundData.playerNum=num+2+tempNum;
-        roundData.player[roundData.playerNum-3]=roundData.player[5];
-        roundData.player[roundData.playerNum-2]=roundData.player[6];
-        roundData.player[roundData.playerNum-1]=roundData.player[7];
+
+        roundData.player[num++]=player_temp_1;
+        roundData.player[num++]=player_temp_2;
+        if(tempNum) roundData.player[num++]=player_temp_3;
+
+	    roundData.playerNum=num;
 	    //局数+1
         ++roundData.roundNums;
         //公共牌为0
