@@ -87,10 +87,10 @@ int explMsg(char *msg) {
         roundData.selfIndex = findIndex(argsMsg.ID);
         //玩家数量
         roundData.playerNum=num+2+tempNum;
-	roundData.player[roundData.playerNum-1]=roundData.player[7];
-	roundData.player[roundData.playerNum-2]=roundData.player[6];
-	roundData.player[roundData.playerNum-3]=roundData.player[5];
-        //局数+1
+        roundData.player[roundData.playerNum-3]=roundData.player[5];
+        roundData.player[roundData.playerNum-2]=roundData.player[6];
+        roundData.player[roundData.playerNum-1]=roundData.player[7];
+	    //局数+1
         ++roundData.roundNums;
         //公共牌为0
         roundData.pubCardNum=0;
