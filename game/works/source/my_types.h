@@ -69,6 +69,9 @@ typedef struct {
     int buttonId;
     //庄家下标（下标轮转）
     int buttonIndex;
+    //
+    int bigBlindID;
+    int smallBlindID;
     //公共牌数量取0，3，4，5
     int pubCardNum;
     //公共牌信息
@@ -86,6 +89,7 @@ typedef struct {
     int poolSum;
     //当前游戏阶段
     int gameStep;
+    int stepNum;//当前阶段经历次数
 } Round;
 
 #endif

@@ -103,19 +103,19 @@ void stepOneAI() {
     color1=roundData.player[roundData.selfIndex].handCard[0].color;
     color2=roundData.player[roundData.selfIndex].handCard[1].color;
     //static bool flag=false;
+    RU(char filename[100];
+       sprintf(filename,"log_%d.txt",argsMsg.ID););
+    RU(char c[200];sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
+    LOG2F(filename,c);
     double p=0.0f;//本手牌概率
+
     if(point1<point2)//保证point1>point2
     {
         point1 = point1^point2;
         point2 = point1^point2;
         point1 = point1^point2;
-   //     color1=color1^color2;
-    //    color2=color1^color2;
-    //    color1=color1^color2;
     }
-     RU(char filename[100];
-       sprintf(filename,"log_%d.txt",argsMsg.ID););
-    RU(char c[200];sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
+    RU(sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
     LOG2F(filename,c);
     if(point1 == point2 ){
       //不算自身
@@ -140,18 +140,22 @@ void stepOneAI() {
           将下注<=((所有-已下注)*胜率)/败率-已下注
          */
         //raiseMoney = (p * roundData.poolSum-roundData.player[selfIndex].bet)/(1-p);//最大下注不会亏
-        raiseMoney=(roundData.poolSum-roundData.player[selfIndex].bet)*p/(1-p)-roundData.player[selfIndex].bet;//加注后总额
+        //raiseMoney=((roundData.poolSum-roundData.player[selfIndex].bet)*p-roundData.player[selfIndex].bet)/(1+p);//加注后总额
+        raiseMoney = p*roundData.poolSum/(1+p);
+        raiseMoney =( (int)((float)raiseMoney/roundData.blind+0.5))*roundData.blind;
+        raiseMoney -= roundData.player[selfIndex].bet;
     }else raiseMoney = 0;
     RU(sprintf(c,"@@@@@@selfIndex:%d raiseMoney:%d@@@@@@@@",selfIndex,raiseMoney););
     LOG2F(filename,c);
     //条件
     int callNum=0,raiseNum=0,small=0,big=0;
     //最后一家下注
-    int lastMoney=0;
-    if(selfIndex == 0) small=1;
-    else if(selfIndex == 1) big=1;
+    int lastMoney=roundData.blind;
+    if(selfIndex == roundData.smallBlindID) small=1;
+    else if(selfIndex ==  roundData.bigBlindID) big=1;
     else{
-      for(int i=2;i<selfIndex;i++){
+      for(int i=0;i<selfIndex;i++){
+          LOG2F(filename,"----iiii-------");
         if(roundData.player[i].action==CALL){
           ++callNum;
           lastMoney=roundData.player[i].roundBet;
@@ -162,53 +166,72 @@ void stepOneAI() {
         }
       }
     }
-
+    srand(time(0));
     //判断
-    int mid = roundData.playerNum/2;
+    raiseMoney -= lastMoney;
+    int mul = roundData.player[selfIndex].jetton / lastMoney;//手中筹码是下注额的倍数
+    int mulBlind = roundData.player[selfIndex].jetton/roundData.blind;//手中筹码是盲注的倍数
+    int mid = (roundData.playerNum-2)/2;
     int action = FOLD;
+    LOG2F(filename,"判断-------");
     if(IsVeryStrong()){
       LOG2F(filename,"VeryStrong");
       //加注是指在之前玩家的基础上
       action = RAISE;
+      raiseMoney = (rand()%3+2)*roundData.blind;
+      raiseMoney -= roundData.player[selfIndex].bet;
+      if(raiseMoney <=0 ) action = CALL;
     }else if(IsStrong()){
       LOG2F(filename,"Strong");
-      if(raiseNum >= 2) action = FOLD;
-      else if(raiseNum==1 && callNum >=1) action = CALL;
-      else if(big==1 || small==1) action = RAISE;
-      else if(raiseNum == 1 && callNum==0 && selfIndex<= mid) action = FOLD;
+      if(raiseNum >= 2 && (raiseMoney<=0 || roundData.playerNum>=4)) action = FOLD;
+      else if(raiseNum>=2) action = CALL;
+      else if(raiseNum==1 && callNum >=1 ) action = CALL;
+      else if(big==1 || small==1 || roundData.playerNum<4 || selfIndex<= 2) action = RAISE;
+      else if(raiseNum == 1 && callNum==0 && roundData.playerNum>=4) action = FOLD;
       else action = RAISE;
+      raiseMoney -= roundData.player[selfIndex].bet;
+      if((action == CALL || action == RAISE) && raiseMoney <0 && mul<=5) action = FOLD;
+      if(mulBlind < 5) action = ALL_IN;
     }else if(IsMid()){
       LOG2F(filename,"Mid");
+
+
       if(raiseNum==0){
         if(small == 0 && big==0 && selfIndex<=mid ) action = FOLD;
         else action = RAISE;
       }
       else if(raiseNum==1 && callNum==0){
         if(big==1) action = CALL;
-        else action=FOLD;
+        else if(roundData.playerNum>5) action=FOLD;
+        else action = CALL;
       }else if(raiseNum==1 && callNum>0){
         if(big==1 || (color1==color2 && point1==13 && point2==12)) action = CALL;
         else action = FOLD;
       }
-    }else if(IsLikeStrong()){//强投机牌
+      else action = FOLD;
+      if(roundData.playerNum <= 4 && action == FOLD ) action = CALL;
+      if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
+
+
+      if(mulBlind < 5) action = ALL_IN;
+    }else if(IsLikeStrong()){//强投机牌 //88-22 / KJs k-10s,QJs,QTs,JTs,T9s
       LOG2F(filename,"LikeStrong");
       if(callNum==0 && raiseNum==0){ //全弃牌
-        if(big==1 || small==1 || selfIndex>6) action = RAISE;
+        if(big==1 || small==1 || selfIndex>4) action = RAISE;
         else action = FOLD;
-      }else if(raiseNum==0 && callNum==1){ //一个玩家跟注
-        if(big==1) action = CHECK;
-        else if(small==1 || selfIndex>6) action = CALL;
-        else action = FOLD;
-      }else if(raiseNum==0 && callNum>1){
+      }else if(raiseNum==0 && callNum>=1){
         if(big==1) action = CHECK;
         else action = CALL;
-      }else if(raiseNum==1 && callNum==0){
+      }else if(raiseNum==1 && callNum>=0){
         if(big==1 ) action = CALL;
         else action = FOLD;
-      } else if(raiseNum==1 && callNum>0){
-        action = CALL;
       }else action = FOLD;
-    }else if(IsBlend()){//混合牌
+
+      if(action==FOLD && roundData.playerNum<=4) action = CALL;
+      if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
+
+      if(mulBlind < 5) action = ALL_IN;
+    }else if(IsBlend()){//混合牌 //KJo,kTo,QJo,JTo / A9s-A2s,98s,87s
       LOG2F(filename,"Blend");
       if(callNum==0 && raiseNum==0) {//全弃牌
         if(big==1 || small==1 || selfIndex>6) action = RAISE;
@@ -223,13 +246,20 @@ void stepOneAI() {
         else action = FOLD;
       }
       else action = FOLD;
+
+
+      if(action==FOLD && roundData.playerNum<=4) action = CALL;
+      if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
+
+      if(mulBlind < 5) action = ALL_IN;
     }else{
       LOG2F(filename,"GAOPAI");
       action = FOLD;
     }
     RU(sprintf(c,"@@@@@@action:%d lastMoney:%d@@@@@@@@",action,lastMoney););
     LOG2F(filename,c);
-    sendMsg(action,raiseMoney - lastMoney);
+    roundData.stepNum+=1;
+    sendMsg(action,raiseMoney);
     LOG2F(filename,"AI_1 OVER!!!!!");
 }
 

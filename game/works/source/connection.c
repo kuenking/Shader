@@ -87,14 +87,26 @@ int explMsg(char *msg) {
             ++num;
             p = p + strlen(p) + 1;
         }
-        roundData.selfIndex = findIndex(argsMsg.ID);
+
         //玩家数量
 
-        roundData.player[num++]=player_temp_1;
-        roundData.player[num++]=player_temp_2;
-        if(tempNum) roundData.player[num++]=player_temp_3;
+        memcpy(&roundData.player[num],&player_temp_1,sizeof(Player));
+        num++;
+        memcpy(&roundData.player[num],&player_temp_2,sizeof(Player));
+        num++;
+        roundData.smallBlindID = num-1;
+        roundData.bigBlindID = -1;
+        if(tempNum)
+        {
+            memcpy(&roundData.player[num],&player_temp_3,sizeof(Player));
+            num++;
+            roundData.bigBlindID = num-1;
+        }
 
 	    roundData.playerNum=num;
+
+
+	    roundData.selfIndex = findIndex(argsMsg.ID);
 	    //局数+1
         ++roundData.roundNums;
         //公共牌为0
@@ -127,6 +139,7 @@ int explMsg(char *msg) {
     } else  if ( strcmp (type, "hold/" )==0) { //手牌消息
         LOG2F(filename,"HOLD!!!");
         roundData.gameStep = STEP_ONE;
+        roundData.stepNum=0;
         int selfIndex = roundData.selfIndex;
         memset(argsMsg.colorNum,0,sizeof(argsMsg.colorNum));
         memset(argsMsg.pointNum,0,sizeof(argsMsg.pointNum));
@@ -293,6 +306,7 @@ int explMsg(char *msg) {
     } else  if ( strcmp (type, "flop/" )==0) { //公牌消息
         LOG2F(filename,"FLOP!!!");
         roundData.gameStep = STEP_TWO;
+        roundData.stepNum=0;
         roundData.pubCardNum=3;
         for(int i=0; i<3; i++) {
             char color[10],point[5];
@@ -310,6 +324,7 @@ int explMsg(char *msg) {
     } else  if ( strcmp (type, "turn/" )==0) { //转牌消息
         LOG2F(filename,"TURN!!!");
         roundData.gameStep = STEP_THREE;
+        roundData.stepNum=0;
         roundData.pubCardNum=4;
         char color[10],point[5];
         p = strtok(p, "\n" );
@@ -326,6 +341,7 @@ int explMsg(char *msg) {
 	LOG2F(filename,"RIVER!!!");
 	LOG2F(filename,p);
         roundData.gameStep = STEP_FOUR;
+        roundData.stepNum=0;
         roundData.pubCardNum=5;
         char color[10],point[5];
         p = strtok(p, "\n" );
@@ -341,6 +357,7 @@ int explMsg(char *msg) {
     } else  if ( strcmp (type, "showdown/" )==0) { //摊牌消息
 	LOG2F(filename,"SHOWDOWN!!!");
         roundData.gameStep = STEP_FIVE;
+        roundData.stepNum=0;
         p = strtok(p,"\n" );
         sscanf(p,"%s",temp);
         p = p + strlen(p)+1;
