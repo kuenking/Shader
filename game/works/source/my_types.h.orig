@@ -68,7 +68,7 @@ typedef struct
     int fold;
     int raise;
     int call;
-} TypePlayer;
+}TypePlayer;
 /**全局信息*/
 typedef struct {
     //用户名

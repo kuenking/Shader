@@ -185,7 +185,7 @@ void stepOneAI() {
         //  raiseMoney =( (int)((float)raiseMoney/roundData.blind+0.5))*roundData.blind;
         // raiseMoney -= roundData.player[selfIndex].bet;
     } else {
-        raiseMoney=roundData.player[selfIndex].jetton;
+      raiseMoney=roundData.player[selfIndex].jetton;
     }
     RU(sprintf(c,"@@@@@@selfIndex:%d raiseMoney:%d@@@@@@@@",selfIndex,raiseMoney););
     LOG2F(filename,c);
@@ -398,11 +398,11 @@ void stepTwoAI() {
 
     int myStyle=cardStyle();
     p=pp[myStyle][liveNum-1];
-    if(p!=0) {
-        p=1-p/100;
-        raiseMoney=(roundData.poolSum-roundData.player[selfIndex].bet)*p/(1-p)-roundData.player[selfIndex].bet;//加注后总额
-    } else {
-        raiseMoney=roundData.player[selfIndex].jetton;
+    if(p!=0){
+      p=1-p/100;
+      raiseMoney=(roundData.poolSum-roundData.player[selfIndex].bet)*p/(1-p)-roundData.player[selfIndex].bet;//加注后总额
+    }else{
+      raiseMoney=roundData.player[selfIndex].jetton;
     }
     srand(time(0));
     int mul = 0;

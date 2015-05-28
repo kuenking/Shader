@@ -24,10 +24,10 @@ int    main(int  args,char **argv) {
         memset(msg,0,MAXLENGTH);
         getMsg(msg);
         if(-1==explMsg(msg))
-        {
-            LOG2F(filename,"退出");
-            break;
-        }
+            {
+                LOG2F(filename,"退出");
+                break;
+            }
     }
     closeSocket();
     return    0;

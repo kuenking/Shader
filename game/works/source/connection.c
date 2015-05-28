@@ -45,7 +45,7 @@ int explMsg(char *msg) {
         roundData.pubCardNum=0;
         //其他玩家信息清空
 
-        for(int i=0;i<NUM_PLAYER;i++)
+        for(int i=0; i<NUM_PLAYER; i++)
         {
             roundData.player[i].isLive=false;
             roundData.player[i].roundBet=0;
@@ -70,7 +70,7 @@ int explMsg(char *msg) {
         player_temp_2.isLive = true;
         p = p + strlen(p) + 1;
         //判断是否有大盲注玩家
-	int tempNum=0;
+        int tempNum=0;
         sscanf(p,"%s",temp);
         Player player_temp_3;
         if (strcmp(temp, "big" )==0) {
@@ -80,7 +80,7 @@ int explMsg(char *msg) {
             ++tempNum;
             p = p + strlen(p)+1;
         }
-	int num = 0;
+        int num = 0;
         //所有玩家信息
         while (1) {
             p = strtok (p,"\n");
@@ -98,33 +98,33 @@ int explMsg(char *msg) {
 
         //玩家数量
 
-     //   memcpy(&roundData.player[num],&player_temp_1,sizeof(Player));
-     roundData.player[num].ID = player_temp_1.ID;
-     roundData.player[num].jetton = player_temp_1.jetton;
-     roundData.player[num].money = player_temp_1.money;
+        //   memcpy(&roundData.player[num],&player_temp_1,sizeof(Player));
+        roundData.player[num].ID = player_temp_1.ID;
+        roundData.player[num].jetton = player_temp_1.jetton;
+        roundData.player[num].money = player_temp_1.money;
         num++;
-      //  memcpy(&roundData.player[num],&player_temp_2,sizeof(Player));
-      roundData.player[num].ID = player_temp_2.ID;
-     roundData.player[num].jetton = player_temp_2.jetton;
-     roundData.player[num].money = player_temp_2.money;
+        //  memcpy(&roundData.player[num],&player_temp_2,sizeof(Player));
+        roundData.player[num].ID = player_temp_2.ID;
+        roundData.player[num].jetton = player_temp_2.jetton;
+        roundData.player[num].money = player_temp_2.money;
         num++;
         roundData.smallBlindID = num-1;
         roundData.bigBlindID = -1;
         if(tempNum)
         {
             //memcpy(&roundData.player[num],&player_temp_3,sizeof(Player));
-        roundData.player[num].ID = player_temp_3.ID;
-        roundData.player[num].jetton = player_temp_3.jetton;
-        roundData.player[num].money = player_temp_3.money;
+            roundData.player[num].ID = player_temp_3.ID;
+            roundData.player[num].jetton = player_temp_3.jetton;
+            roundData.player[num].money = player_temp_3.money;
             num++;
             roundData.bigBlindID = num-1;
         }
 
-	    roundData.playerNum=num;
+        roundData.playerNum=num;
 
 
-	    roundData.selfIndex = findIndex(argsMsg.ID);
-	    //局数+1
+        roundData.selfIndex = findIndex(argsMsg.ID);
+        //局数+1
         ++roundData.roundNums;
         //公共牌为0
         roundData.pubCardNum=0;
@@ -132,10 +132,10 @@ int explMsg(char *msg) {
         if(!firstStart)
         {
             firstStart = true;
-            for(int i=0;i<NUM_PLAYER;i++)
+            for(int i=0; i<NUM_PLAYER; i++)
             {
                 roundData.typePlayer[i].ID = roundData.player[i].ID;
-                 RU(sprintf(temp,"TTTTTTTTTTTT i:%d id:%d TTTTTTTTTTTTT",i,roundData.player[i].ID););
+                RU(sprintf(temp,"TTTTTTTTTTTT i:%d id:%d TTTTTTTTTTTTT",i,roundData.player[i].ID););
                 LOG2F(filename,temp);
             }
         }
@@ -186,14 +186,14 @@ int explMsg(char *msg) {
         LOG2F(filename,"HOLD OVER!!!");
     }   else  if ( strcmp (type, "inquire/" )==0) { //询问消息
         LOG2F(filename,"INQUIRE!!!");
-       // int haveAllin = 0;
+        // int haveAllin = 0;
         int nump=0;
         roundData.needBet = 0;
         int selfIndex = roundData.selfIndex;
-            roundData.raiseNum=0;
-            roundData.callNum=0;
-            roundData.attack = 0;
-            roundData.tight=0;
+        roundData.raiseNum=0;
+        roundData.callNum=0;
+        roundData.attack = 0;
+        roundData.tight=0;
         while(1)
         {
             p = strtok(p, "\n" );
@@ -204,7 +204,7 @@ int explMsg(char *msg) {
             sscanf(p,"%d%d%d%d%s",&id,&je,&mo,&bet,action);
             int typeID = findTypeIndex(id);
             RU(sprintf(temp,"TTTTTTTTTTTT id:%d typeID:%d TTTTTTTTTTTTT",id,typeID););
-                LOG2F(filename,temp);
+            LOG2F(filename,temp);
             id = findIndex(id);
 
             roundData.player[id].action = findAction(action);
@@ -216,19 +216,23 @@ int explMsg(char *msg) {
 
             switch(roundData.player[id].action)
             {
-                case RAISE:
-                case ALL_IN:
+            case RAISE:
+            case ALL_IN:
                 if(roundData.typePlayer[typeID].type != TYPE_ALLIN) roundData.raiseNum++;
                 break;
-                case CALL:
+            case CALL:
                 roundData.callNum++;
                 break;
             }
 
             switch(roundData.typePlayer[typeID].type)
             {
-                case TYPE_ATTACK:roundData.attack++;break;
-                case TYPE_TIGHT:roundData.tight++;break;
+            case TYPE_ATTACK:
+                roundData.attack++;
+                break;
+            case TYPE_TIGHT:
+                roundData.tight++;
+                break;
             }
             if(roundData.gameStep==STEP_ONE)
             {
@@ -242,14 +246,22 @@ int explMsg(char *msg) {
             {
                 switch(roundData.player[id].action )
                 {
-                    case ALL_IN:++roundData.typePlayer[typeID].allin;break;
-                    case FOLD:++roundData.typePlayer[typeID].fold;break;
-                    case CALL:++roundData.typePlayer[typeID].call;break;
-                    case RAISE:++roundData.typePlayer[typeID].raise;break;
+                case ALL_IN:
+                    ++roundData.typePlayer[typeID].allin;
+                    break;
+                case FOLD:
+                    ++roundData.typePlayer[typeID].fold;
+                    break;
+                case CALL:
+                    ++roundData.typePlayer[typeID].call;
+                    break;
+                case RAISE:
+                    ++roundData.typePlayer[typeID].raise;
+                    break;
                 }
             }
             RU(sprintf(temp,"TTTTTTTTTTTT nump:%d TTTTTTTTTTTTT",nump););
-                LOG2F(filename,temp);
+            LOG2F(filename,temp);
             p = p + strlen (p) + 1;
             //nump++;
         }
@@ -258,7 +270,7 @@ int explMsg(char *msg) {
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
-   //     roundData.playerNum = nump;//玩家总数
+        //     roundData.playerNum = nump;//玩家总数
         /*
 
         此处接入AI算法
@@ -302,8 +314,8 @@ int explMsg(char *msg) {
         p = p + strlen (p)+1;
         LOG2F(filename,"TURN OVER!!!");
     } else  if ( strcmp (type, "river/" )==0) { //河牌消息
-	LOG2F(filename,"RIVER!!!");
-	LOG2F(filename,p);
+        LOG2F(filename,"RIVER!!!");
+        LOG2F(filename,p);
         roundData.gameStep = STEP_FOUR;
         roundData.stepNum=0;
         roundData.pubCardNum=5;
@@ -317,9 +329,9 @@ int explMsg(char *msg) {
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
-	LOG2F(filename,"RIVER OVER!!!");
+        LOG2F(filename,"RIVER OVER!!!");
     } else  if ( strcmp (type, "showdown/" )==0) { //摊牌消息
-	LOG2F(filename,"SHOWDOWN!!!");
+        LOG2F(filename,"SHOWDOWN!!!");
         roundData.gameStep = STEP_FIVE;
         roundData.stepNum=0;
         p = strtok(p,"\n" );
@@ -357,10 +369,10 @@ int explMsg(char *msg) {
             p = p+strlen(p)+1;
         }
         /*计算玩家类型*/
-            ai_type();
-	LOG2F(filename,"SHOWDOWN OVER!!!");
+        ai_type();
+        LOG2F(filename,"SHOWDOWN OVER!!!");
     } else  if ( strcmp (type, "pot-win/" )==0) { //彩池分配消息
-	LOG2F(filename,"POT_WIN!!!");
+        LOG2F(filename,"POT_WIN!!!");
         int num;
         roundData.gameStep = STEP_FIVE;
         //所有玩家信息
@@ -385,7 +397,7 @@ int explMsg(char *msg) {
         }
         //玩家数量
         //roundData.playerNum=num;
-	LOG2F(filename,"POT_WIN OVER!!!");
+        LOG2F(filename,"POT_WIN OVER!!!");
     } else
     {
         p = strtok(p, "\n" );
@@ -422,7 +434,7 @@ int conServer(char ** argv)
     struct sockaddr_in clentAddr;
     clentAddr.sin_family=AF_INET;
     clentAddr.sin_port=htons(argsMsg.localPort);
-     int flag=1,len=sizeof(int);
+    int flag=1,len=sizeof(int);
     if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,  &flag, len) == -1)
     {
         LOG2F(filename,"FAILE setsockopt!!!");
@@ -457,7 +469,7 @@ int conServer(char ** argv)
     LOG2F(filename,"SUCCESS REG!!!");
 
     //初始化选手信息
-    for(int i=0;i<NUM_PLAYER;i++)
+    for(int i=0; i<NUM_PLAYER; i++)
     {
         roundData.typePlayer[i].allin=0;
         roundData.typePlayer[i].fold=0;
@@ -478,7 +490,7 @@ int getMsg(char*msg )
         return RECV_ERROR;
     }
     LOG2F(filename,"RECV SUCCESS!!!");
-    RU(char temp[MAXLENGTH];sprintf(temp,"STARTTTTTTTTTTTTTTTTT\n\nRECV MSG IS:%sENDDDDDDDDDDDDDDDDD\n\n",msg););
+    RU(char temp[MAXLENGTH]; sprintf(temp,"STARTTTTTTTTTTTTTTTTT\n\nRECV MSG IS:%sENDDDDDDDDDDDDDDDDD\n\n",msg););
     LOG2F(filename,temp);
     return SUCCESS;
 }

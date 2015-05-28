@@ -26,15 +26,15 @@ extern char  actions[5][8];
 
 #define MAXTYPE 500
 //牌型
-#define HIGH_CARD		1
-#define ONE_PAIR		2
-#define TWO_PAIR		3
-#define THREE_OF_A_KIND	4
-#define STRAIGHT		5
-#define FLUSH			6
-#define FULL_HOUSE		7
-#define FOUR_OF_A_KIND	8
-#define STRAIGHT_FLUSH	9
+#define HIGH_CARD      	8
+#define ONE_PAIR       	7
+#define TWO_PAIR       	6
+#define THREE_OF_A_KIND	5
+#define FLUSH		4
+#define STRAIGHT	3
+#define FULL_HOUSE     	2
+#define FOUR_OF_A_KIND	1
+#define STRAIGHT_FLUSH	0
 
 //玩家类型
 #define TYPE_IGNORE         1//可忽略
