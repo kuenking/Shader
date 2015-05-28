@@ -17,7 +17,7 @@ int sock;
 
 //全局变量
 Round roundData;
-
+bool firstStart = false;
 int explMsg(char *msg) {
     RU(char filename[100];
        sprintf(filename,"log_%d.txt",argsMsg.ID););
@@ -39,11 +39,19 @@ int explMsg(char *msg) {
         LOG2F(filename,"SEAT!!!");
         //初始化信息
         roundData.gameStep = STEP_ZERO;
+        roundData.stepNum = 0;
         roundData.buttonId=0;
         roundData.buttonIndex=0;
         roundData.pubCardNum=0;
         //其他玩家信息清空
-        memset(roundData.player,0, sizeof(Player)*NUM_PLAYER);
+
+        for(int i=0;i<NUM_PLAYER;i++)
+        {
+            roundData.player[i].isLive=false;
+            roundData.player[i].roundBet=0;
+            roundData.player[i].bet=0;
+            roundData.player[i].topHand = 0;
+        }
         //公共牌清空
         memset(roundData.pubCard,0, sizeof(Card)*5);
         roundData.selfIndex=0;
@@ -58,7 +66,7 @@ int explMsg(char *msg) {
         //小盲注玩家信息
         p = strtok(p,"\n");
         Player player_temp_2;
-        sscanf(p,"%s%d%d%d",temp,&player_temp_2.ID,&player_temp_2.jetton,&player_temp_2.money);
+        sscanf(p,"%s%s%d%d%d",temp,temp,&player_temp_2.ID,&player_temp_2.jetton,&player_temp_2.money);
         player_temp_2.isLive = true;
         p = p + strlen(p) + 1;
         //判断是否有大盲注玩家
@@ -90,15 +98,24 @@ int explMsg(char *msg) {
 
         //玩家数量
 
-        memcpy(&roundData.player[num],&player_temp_1,sizeof(Player));
+     //   memcpy(&roundData.player[num],&player_temp_1,sizeof(Player));
+     roundData.player[num].ID = player_temp_1.ID;
+     roundData.player[num].jetton = player_temp_1.jetton;
+     roundData.player[num].money = player_temp_1.money;
         num++;
-        memcpy(&roundData.player[num],&player_temp_2,sizeof(Player));
+      //  memcpy(&roundData.player[num],&player_temp_2,sizeof(Player));
+      roundData.player[num].ID = player_temp_2.ID;
+     roundData.player[num].jetton = player_temp_2.jetton;
+     roundData.player[num].money = player_temp_2.money;
         num++;
         roundData.smallBlindID = num-1;
         roundData.bigBlindID = -1;
         if(tempNum)
         {
-            memcpy(&roundData.player[num],&player_temp_3,sizeof(Player));
+            //memcpy(&roundData.player[num],&player_temp_3,sizeof(Player));
+        roundData.player[num].ID = player_temp_3.ID;
+        roundData.player[num].jetton = player_temp_3.jetton;
+        roundData.player[num].money = player_temp_3.money;
             num++;
             roundData.bigBlindID = num-1;
         }
@@ -111,6 +128,17 @@ int explMsg(char *msg) {
         ++roundData.roundNums;
         //公共牌为0
         roundData.pubCardNum=0;
+
+        if(!firstStart)
+        {
+            firstStart = true;
+            for(int i=0;i<NUM_PLAYER;i++)
+            {
+                roundData.typePlayer[i].ID = roundData.player[i].ID;
+                 RU(sprintf(temp,"TTTTTTTTTTTT i:%d id:%d TTTTTTTTTTTTT",i,roundData.player[i].ID););
+                LOG2F(filename,temp);
+            }
+        }
         LOG2F(filename,"SEAT OVER!!!");
     } else  if ( strcmp (type, "game-over" )==0) { //游戏结束消息
         LOG2F(filename,"GAME_OVER!!!");
@@ -156,11 +184,16 @@ int explMsg(char *msg) {
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
         LOG2F(filename,"HOLD OVER!!!");
-    } else  if ( strcmp (type, "inquire/" )==0) { //询问消息
+    }   else  if ( strcmp (type, "inquire/" )==0) { //询问消息
         LOG2F(filename,"INQUIRE!!!");
        // int haveAllin = 0;
         int nump=0;
         roundData.needBet = 0;
+        int selfIndex = roundData.selfIndex;
+            roundData.raiseNum=0;
+            roundData.callNum=0;
+            roundData.attack = 0;
+            roundData.tight=0;
         while(1)
         {
             p = strtok(p, "\n" );
@@ -169,138 +202,69 @@ int explMsg(char *msg) {
             int id,je,mo,bet;
             char action[20];	//本手牌已行动过的所有玩家（包括被询问者和盲注）的id,手中筹码、剩余金币数、本手牌累计投注额、及最近的一次有效action，按逆时针座次由近及远排列，上家排在第一个
             sscanf(p,"%d%d%d%d%s",&id,&je,&mo,&bet,action);
+            int typeID = findTypeIndex(id);
+            RU(sprintf(temp,"TTTTTTTTTTTT id:%d typeID:%d TTTTTTTTTTTTT",id,typeID););
+                LOG2F(filename,temp);
             id = findIndex(id);
+
             roundData.player[id].action = findAction(action);
-            if(roundData.player[id].action==FOLD) roundData.player[id].isLive=false;//如果玩家弃牌，以后的action都一样
             roundData.player[id].jetton = je;
             roundData.player[id].money = mo;
             roundData.player[id].roundBet = bet - roundData.player[id].bet;//本轮下注
             roundData.player[id].bet = bet;
             roundData.needBet = roundData.needBet > roundData.player[id].roundBet?roundData.needBet:roundData.player[id].roundBet;
+
+            switch(roundData.player[id].action)
+            {
+                case RAISE:
+                case ALL_IN:
+                if(roundData.typePlayer[typeID].type != TYPE_ALLIN) roundData.raiseNum++;
+                break;
+                case CALL:
+                roundData.callNum++;
+                break;
+            }
+
+            switch(roundData.typePlayer[typeID].type)
+            {
+                case TYPE_ATTACK:roundData.attack++;break;
+                case TYPE_TIGHT:roundData.tight++;break;
+            }
+            if(roundData.gameStep==STEP_ONE)
+            {
+                RU(sprintf(temp,"TTTTTTTTTTTT id:%d topHand:%d TTTTTTTTTTTTT",id,roundData.player[id].topHand););
+                LOG2F(filename,temp);
+                roundData.player[id].actionHand[roundData.player[id].topHand++] =  roundData.player[id].action;
+                if(roundData.player[id].topHand>=20) roundData.player[id].topHand = 19;
+            }
+
+            if(roundData.gameStep==STEP_ONE && roundData.player[id].action != BLIND )
+            {
+                switch(roundData.player[id].action )
+                {
+                    case ALL_IN:++roundData.typePlayer[typeID].allin;break;
+                    case FOLD:++roundData.typePlayer[typeID].fold;break;
+                    case CALL:++roundData.typePlayer[typeID].call;break;
+                    case RAISE:++roundData.typePlayer[typeID].raise;break;
+                }
+            }
+            RU(sprintf(temp,"TTTTTTTTTTTT nump:%d TTTTTTTTTTTTT",nump););
+                LOG2F(filename,temp);
             p = p + strlen (p) + 1;
-            nump++;
+            //nump++;
         }
         p = strtok(p, "\n" );
         sscanf(p,"total pot: %d ",&roundData.poolSum);//当前池底总金额
         p = p + strlen (p)+1;
         p = strtok(p, "\n" );//除去最后的结束标志
         p = p + strlen (p)+1;
-        roundData.playerNum = nump;//玩家总数
+   //     roundData.playerNum = nump;//玩家总数
         /*
 
         此处接入AI算法
 
         */
         ai();
-        /*random
-        if(roundData.player[roundData.selfIndex].isLive==true)
-        {
-            srand(time(0));
-            int t = rand()%5;
-            sprintf(temp,"RANDOM:%d!",t);
-            LOG2F(filename,temp);
-            sendMsg(t,roundData.blind);
-            if(t==FOLD) roundData.player[roundData.selfIndex].isLive = false;
-        }*/
-        /*FOLD
-        if(roundData.player[roundData.selfIndex].isLive==true)
-        {
-            int nums=0;
-            for(int i=0;i<8;i++)
-            {
-                if(roundData.player[i].isLive==true) nums++;
-            }
-            if(nums==1) sendMsg(ALL_IN,0);
-            else {sendMsg(FOLD,0);roundData.player[roundData.selfIndex].isLive=false;}
-        }*/
-        /*ALL_IN
-        sendMsg(ALL_IN,0);*/
-
-	/*int selfIndex = roundData.selfIndex;
-	int sameColor = 0;
-	int samePoint = 0;
-	int lianpai = 0;
-	double handGai = 100;
-	if(roundData.gameStep == STEP_ONE)
-	{
-	    int maxp = roundData.player[selfIndex].handCard[0].point>roundData.player[selfIndex].handCard[1].point?roundData.player[selfIndex].handCard[0].point:roundData.player[selfIndex].handCard[1].point;
-	    if(roundData.player[selfIndex].handCard[0].color == roundData.player[selfIndex].handCard[1].color)
-	       sameColor = 1;
-	    if(roundData.player[selfIndex].handCard[0].point == roundData.player[selfIndex].handCard[1].point)
-	       samePoint = 1;
-	    if(abs(roundData.player[selfIndex].handCard[0].point -roundData.player[selfIndex].handCard[1].point)==1)
-	       lianpai = 1;
-	    if(haveAllin == 1)
-		{
-		   if(samePoint==1 || (sameColor==1 && lianpai==1) || (roundData.player[selfIndex].handCard[0].point>12 && roundData.player[selfIndex].handCard[1].point>12)) sendMsg(ALL_IN,0);
-		   else sendMsg(FOLD,0);
-		}
-	    else
-		{
-		   if(samePoint + sameColor + lianpai > 0 || maxp>=10) sendMsg(RAISE,roundData.poolSum/3);
-		   else
-		   {
-			sendMsg(FOLD,0);
-		   }
-		}
-	}
-	else if(roundData.gameStep == STEP_TWO)
-	{
-		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
-		int dui=0,three=0,sun=0,maxp=0;
-		for(int i=1;i<15;i++)
-		{
-			if(argsMsg.pointNum[i]==2) {++dui; maxp=i;}
-			else if(argsMsg.pointNum[i]==3) three++;
-			if(i<11 && argsMsg.pointNum[i]+argsMsg.pointNum[i+1]+argsMsg.pointNum[i+2]+argsMsg.pointNum[i+3]+argsMsg.pointNum[i+4]==5) sun=1;
-
-		}
-		if(argsMsg.pointNum[1]+argsMsg.pointNum[2]+argsMsg.pointNum[3]+argsMsg.pointNum[4]+argsMsg.pointNum[14]==5) sun=1;
-		if(sun==1 || (three==1 && dui==1)) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
-		if(haveAllin == 1)
-		{
-		   if(dui==2) sendMsg(CALL,0);
-		   sendMsg(FOLD,0);
-		}
-        else
-		{
-		    if(roundData.playerNum<=4 && dui!=0) sendMsg(RAISE,roundData.poolSum/10);
-		    else if(roundData.playerNum>4 && ((dui>=1 && maxp>10) || dui>=2)) sendMsg(RAISE,roundData.poolSum/10);
-		    else
-		    {
-		    	sendMsg(FOLD,0);
-		   }
-		}
-	}
-	else if(roundData.gameStep == STEP_THREE || roundData.gameStep == STEP_FOUR)
-	{
-		if(argsMsg.colorNum[0]+argsMsg.colorNum[1]+argsMsg.colorNum[2]+argsMsg.colorNum[3] == 1) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
-		int dui=0,three=0,sun=0,maxp=0;
-		for(int i=1;i<15;i++)
-		{
-			if(argsMsg.pointNum[i]==2) {++dui; maxp=i;}
-			else if(argsMsg.pointNum[i]==3) three++;
-			if(i<11 && argsMsg.pointNum[i]+argsMsg.pointNum[i+1]+argsMsg.pointNum[i+2]+argsMsg.pointNum[i+3]+argsMsg.pointNum[i+4]==5) sun=1;
-
-		}
-		if(argsMsg.pointNum[1]+argsMsg.pointNum[2]+argsMsg.pointNum[3]+argsMsg.pointNum[4]+argsMsg.pointNum[14]==5) sun=1;
-		if(sun==1 || (three==1 && dui==1)) sendMsg(RAISE,roundData.player[roundData.selfIndex].jetton);
-		if(haveAllin == 1)
-		{
-		   if(dui==2) sendMsg(CALL,0);
-		   sendMsg(FOLD,0);
-		}
-        else
-		{
-		    if(roundData.playerNum<=4 && dui!=0) sendMsg(CALL,roundData.poolSum/10);
-		    else if(roundData.playerNum>4 && (dui==2) )sendMsg(RAISE,roundData.poolSum/10);
-		    else
-		    {
-		    	sendMsg(FOLD,0);
-		    }
-		}
-	}*/
-
         LOG2F(filename,"INQUIRE OVER");
 
     } else  if ( strcmp (type, "flop/" )==0) { //公牌消息
@@ -387,8 +351,13 @@ int explMsg(char *msg) {
             roundData.player[id].handCard[0].point = findPoint(point[0]);
             roundData.player[id].handCard[1].point = findPoint(point[1]);
             roundData.player[id].bestType = findType(nut);//玩家最佳牌型
+
+
+
             p = p+strlen(p)+1;
         }
+        /*计算玩家类型*/
+            ai_type();
 	LOG2F(filename,"SHOWDOWN OVER!!!");
     } else  if ( strcmp (type, "pot-win/" )==0) { //彩池分配消息
 	LOG2F(filename,"POT_WIN!!!");
@@ -415,7 +384,7 @@ int explMsg(char *msg) {
             p=p + strlen (p)+1;
         }
         //玩家数量
-        roundData.playerNum=num;
+        //roundData.playerNum=num;
 	LOG2F(filename,"POT_WIN OVER!!!");
     } else
     {
@@ -486,6 +455,17 @@ int conServer(char ** argv)
     if(-1 == send(sock,c,strlen(c),0))
         LOG2F(filename,"SEND ERROR!!!");
     LOG2F(filename,"SUCCESS REG!!!");
+
+    //初始化选手信息
+    for(int i=0;i<NUM_PLAYER;i++)
+    {
+        roundData.typePlayer[i].allin=0;
+        roundData.typePlayer[i].fold=0;
+        roundData.typePlayer[i].raise=0;
+        roundData.typePlayer[i].call=0;
+        roundData.player[i].topHand = 0;
+        roundData.typePlayer[i].type=0;
+    }
     return SUCCESS;
 }
 int getMsg(char*msg )
@@ -590,5 +570,6 @@ int findAction(char *action)
     else if(strcmp(action,"raise")==0) a=RAISE;
     else if(strcmp(action,"all_in")==0) a=ALL_IN;
     else if(strcmp(action,"fold")==0) a=FOLD;
+    else if(strcmp(action,"blind")==0) a=BLIND;
     return a;
 }

@@ -53,10 +53,22 @@ typedef struct {
     int winNum;
     //最近行动
     unsigned char action;
-    //所有行动
-    unsigned char actionAll[20];
+    //所有手牌时的行动
+    unsigned char actionHand[20];
+    int topHand;
+
 } Player;
 
+typedef struct
+{
+
+    int ID;
+    int type;
+    int allin;
+    int fold;
+    int raise;
+    int call;
+}TypePlayer;
 /**全局信息*/
 typedef struct {
     //用户名
@@ -78,6 +90,7 @@ typedef struct {
     Card pubCard[5];
     //选手信息（包括自己，便于解析）
     Player player[NUM_PLAYER];
+    TypePlayer typePlayer[NUM_PLAYER];
     //玩家自己ID
     //int selfID;
     //玩家自己下标
@@ -90,6 +103,10 @@ typedef struct {
     //当前游戏阶段
     int gameStep;
     int stepNum;//当前阶段经历次数
+    int raiseNum;
+    int callNum;
+    int tight;
+    int attack;
 } Round;
 
 #endif

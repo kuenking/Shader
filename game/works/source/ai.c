@@ -37,6 +37,10 @@ double Ax[15][9]={
 };
 
 void ai() {
+      RU(char filename[100];
+       sprintf(filename,"log_%d.txt",argsMsg.ID););
+    RU(char c[200];sprintf(c,"@@@@@@AI...... roundData.gameStep:%d@@@@@@@@",roundData.gameStep););
+   // LOG2F(filename,c);
     switch(roundData.gameStep) {
     case STEP_ONE:
         stepOneAI();
@@ -55,14 +59,14 @@ void ai() {
     }
 }
 
-int IsVeryStrong()
+int IsVeryStrong(int point1,int point2)
 {
 
     if((point1 == point2 && point1>=12) || (point1+point2>=27))
     return 1;
     return 0;
 }
-int IsStrong()
+int IsStrong(int point1,int point2,int color1,int color2)
 {
     if((point1==point2 && point1>=9)||(point1+point2 >= 26) || (color1==color2 && point1+point2>=25))
     {
@@ -70,7 +74,7 @@ int IsStrong()
     }
     return 0;
 }
-int IsMid()
+int IsMid(int point1,int point2)
 {
     if(point1+point2>=25 || (point1==14&&point2>=10))//AJo,AT,KQ
     {
@@ -78,13 +82,13 @@ int IsMid()
     }
     return 0;
 }
-int IsLikeStrong()//强投机牌
+int IsLikeStrong(int point1,int point2,int color1,int color2)//强投机牌
 {//88-22 / KJs k-10s,QJs,QTs,JTs,T9s
     if(point1==point2 ) return 1;
-    if(color1==color2 && (point2>=10 || (point1>=10 && point2>=9))) return 1;
+    if(color1==color2 && point2>=9) return 1;
     return 0;
 }
-int IsBlend()
+int IsBlend(int point1,int point2,int color1,int color2)
 {//KJo,kTo,QJo,JTo / A9s-A2s,98s,87s
     if(point1==13 && (point2==11 || point2==10)) return 1;
     else if(point1==12 && point2==11) return 1;
@@ -106,7 +110,7 @@ void stepOneAI() {
     RU(char filename[100];
        sprintf(filename,"log_%d.txt",argsMsg.ID););
     RU(char c[200];sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
-    LOG2F(filename,c);
+   // LOG2F(filename,c);
     double p=0.0f;//本手牌概率
 
     if(point1<point2)//保证point1>point2
@@ -115,8 +119,8 @@ void stepOneAI() {
         point2 = point1^point2;
         point1 = point1^point2;
     }
-    RU(sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
-    LOG2F(filename,c);
+   // RU(sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
+    //LOG2F(filename,c);
     if(point1 == point2 ){
       //不算自身
       p = sub[point1][roundData.playerNum-1];
@@ -128,10 +132,30 @@ void stepOneAI() {
       }
 
     }
-    RU(sprintf(c,"@@@@@@p:%f@@@@@@@@",p););
+    RU(sprintf(c,"@@@@@@p:%f roundData.selfIndex:%d @@@@@@@@",p,roundData.selfIndex););
     LOG2F(filename,c);
     int selfIndex = roundData.selfIndex;
     int raiseMoney=0;
+     //条件
+    int callNum=0,raiseNum=0,small=0,big=0,tight=0,attack=0;
+    //最后一家下注
+    int lastMoney=roundData.blind;
+
+    if(selfIndex == roundData.smallBlindID) small=1;
+    else if(selfIndex ==  roundData.bigBlindID) big=1;
+    {
+        callNum = roundData.callNum;
+        raiseNum = roundData.raiseNum;
+        tight = roundData.tight;
+        attack = roundData.attack;
+        lastMoney = roundData.needBet;
+    }
+     //判断
+    //raiseMoney -= lastMoney;
+    //if(lastMoney > roundData.player[selfIndex].jetton)
+    {
+  //      roundData.poolSum = roundData.player[selfIndex].bet*(raiseNum+callNum);
+    }
     if(p!=0)//计算加注
     {
         p=1-p/100;
@@ -140,61 +164,49 @@ void stepOneAI() {
           将下注<=((所有-已下注)*胜率)/败率-已下注
          */
         //raiseMoney = (p * roundData.poolSum-roundData.player[selfIndex].bet)/(1-p);//最大下注不会亏
+        raiseMoney=(roundData.poolSum-roundData.player[selfIndex].bet)*p/(1-p)-roundData.player[selfIndex].bet;//加注后总额
         //raiseMoney=((roundData.poolSum-roundData.player[selfIndex].bet)*p-roundData.player[selfIndex].bet)/(1+p);//加注后总额
-        raiseMoney = p*roundData.poolSum/(1+p);
-        raiseMoney =( (int)((float)raiseMoney/roundData.blind+0.5))*roundData.blind;
-        raiseMoney -= roundData.player[selfIndex].bet;
+       // raiseMoney = p*roundData.poolSum/(1+p);
+      //  raiseMoney =( (int)((float)raiseMoney/roundData.blind+0.5))*roundData.blind;
+       // raiseMoney -= roundData.player[selfIndex].bet;
     }else raiseMoney = 0;
     RU(sprintf(c,"@@@@@@selfIndex:%d raiseMoney:%d@@@@@@@@",selfIndex,raiseMoney););
     LOG2F(filename,c);
-    //条件
-    int callNum=0,raiseNum=0,small=0,big=0;
-    //最后一家下注
-    int lastMoney=roundData.blind;
-    if(selfIndex == roundData.smallBlindID) small=1;
-    else if(selfIndex ==  roundData.bigBlindID) big=1;
-    else{
-      for(int i=0;i<selfIndex;i++){
-          LOG2F(filename,"----iiii-------");
-        if(roundData.player[i].action==CALL){
-          ++callNum;
-          lastMoney=roundData.player[i].roundBet;
-        }
-        if(roundData.player[i].action==RAISE || roundData.player[i].action==ALL_IN){
-          ++raiseNum;
-          lastMoney=roundData.player[i].roundBet;
-        }
-      }
-    }
+
     srand(time(0));
-    //判断
-    raiseMoney -= lastMoney;
-    int mul = roundData.player[selfIndex].jetton / lastMoney;//手中筹码是下注额的倍数
+
+    RU(sprintf(c,"@@@@@@blind:%d lastMoney:%d raiseMoney:%d playerNUm:%d raiseNum:%d callNum:%d @@@@@@@@",roundData.blind,lastMoney,raiseMoney,roundData.playerNum,raiseNum,callNum););
+    LOG2F(filename,c);
+    int mul = 0;
+    if(lastMoney!=0) mul = roundData.player[selfIndex].jetton / lastMoney;//手中筹码是下注额的倍数
     int mulBlind = roundData.player[selfIndex].jetton/roundData.blind;//手中筹码是盲注的倍数
     int mid = (roundData.playerNum-2)/2;
     int action = FOLD;
     LOG2F(filename,"判断-------");
-    if(IsVeryStrong()){
+    raiseMoney -= lastMoney;
+    if(IsVeryStrong(point1,point2)){
       LOG2F(filename,"VeryStrong");
       //加注是指在之前玩家的基础上
       action = RAISE;
       raiseMoney = (rand()%3+2)*roundData.blind;
       raiseMoney -= roundData.player[selfIndex].bet;
       if(raiseMoney <=0 ) action = CALL;
-    }else if(IsStrong()){
+    }else if(IsStrong(point1,point2,color1,color2)){
       LOG2F(filename,"Strong");
-      if(raiseNum >= 2 && (raiseMoney<=0 || roundData.playerNum>=4)) action = FOLD;
-      else if(raiseNum>=2) action = CALL;
-      else if(raiseNum==1 && callNum >=1 ) action = CALL;
-      else if(big==1 || small==1 || roundData.playerNum<4 || selfIndex<= 2) action = RAISE;
-      else if(raiseNum == 1 && callNum==0 && roundData.playerNum>=4) action = FOLD;
-      else action = RAISE;
-      raiseMoney -= roundData.player[selfIndex].bet;
-      if((action == CALL || action == RAISE) && raiseMoney <0 && mul<=5) action = FOLD;
-      if(mulBlind < 5) action = ALL_IN;
-    }else if(IsMid()){
-      LOG2F(filename,"Mid");
 
+      if(raiseNum >= 2) action = FOLD;
+      else if(raiseNum==1 && callNum >=1) action = CALL;
+      else if(big==1 || small==1 || roundData.playerNum<4 ) action = RAISE;
+      else if(tight>0) action=FOLD;
+      else if(raiseNum == 1 && callNum==0 && selfIndex<=mid)action = FOLD;
+      else action = RAISE;
+      //raiseMoney -= roundData.player[selfIndex].bet;
+      if((action == CALL || action == RAISE) && raiseMoney <0 && mul<=5) action = FOLD;
+      if(raiseMoney > roundData.blind*2) raiseMoney = roundData.blind*2; //最多2个大满主
+      if(mulBlind < 5) action = ALL_IN;
+    }else if(IsMid(point1,point2)){
+
+      LOG2F(filename,"Mid");
 
       if(raiseNum==0){
         if(small == 0 && big==0 && selfIndex<=mid ) action = FOLD;
@@ -202,63 +214,87 @@ void stepOneAI() {
       }
       else if(raiseNum==1 && callNum==0){
         if(big==1) action = CALL;
+        else if(attack==1) action=CALL;
         else if(roundData.playerNum>5) action=FOLD;
         else action = CALL;
       }else if(raiseNum==1 && callNum>0){
         if(big==1 || (color1==color2 && point1==13 && point2==12)) action = CALL;
+        else if(attack==(raiseNum+callNum)) action=CALL;
         else action = FOLD;
       }
       else action = FOLD;
-      if(roundData.playerNum <= 4 && action == FOLD ) action = CALL;
+
+      if(mul>=10 && action == FOLD ) action = CALL;
+
       if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
 
+      if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*(rand()%2+1); //最多2个大满主
 
-      if(mulBlind < 5) action = ALL_IN;
-    }else if(IsLikeStrong()){//强投机牌 //88-22 / KJs k-10s,QJs,QTs,JTs,T9s
+      if(mulBlind <= 5)  action = ALL_IN;
+    }else if(IsLikeStrong(point1,point2,color1,color2)){//强投机牌 //88-22 / KJs k-10s,QJs,QTs,JTs,T9s
       LOG2F(filename,"LikeStrong");
       if(callNum==0 && raiseNum==0){ //全弃牌
-        if(big==1 || small==1 || selfIndex>4) action = RAISE;
+        if(big==1 || small==1 || selfIndex>roundData.playerNum/2) action = RAISE;
         else action = FOLD;
       }else if(raiseNum==0 && callNum>=1){
         if(big==1) action = CHECK;
-        else action = CALL;
+        else if(small==1  || selfIndex>roundData.playerNum/2) action = CALL;
+        else action = FOLD;
       }else if(raiseNum==1 && callNum>=0){
         if(big==1 ) action = CALL;
+        else if(attack==(raiseNum+callNum))action = CALL;
+        else if(tight>0) action=FOLD;
         else action = FOLD;
       }else action = FOLD;
-
-      if(action==FOLD && roundData.playerNum<=4) action = CALL;
+         if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
+     // if(action==FOLD && roundData.playerNum<=4) action = CALL;
       if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
 
       if(mulBlind < 5) action = ALL_IN;
-    }else if(IsBlend()){//混合牌 //KJo,kTo,QJo,JTo / A9s-A2s,98s,87s
+    }else if(IsBlend(point1,point2,color1,color2)){//混合牌 //KJo,kTo,QJo,JTo / A9s-A2s,98s,87s
       LOG2F(filename,"Blend");
+
+
       if(callNum==0 && raiseNum==0) {//全弃牌
-        if(big==1 || small==1 || selfIndex>6) action = RAISE;
+        if(big==1 || small==1 || selfIndex>roundData.playerNum/2) action = RAISE;
         else action = FOLD;
-      }else if(raiseNum==0 && callNum==1){ //一个玩家跟注
+      }else if(raiseNum==0 && callNum>=1){ //一个玩家跟注
         if(big==1) action = CHECK;
         else if(small==1) sendMsg(CALL,0);
-        else action = FOLD;
-      }else if(raiseNum==0 && callNum>1) {
-        if(big==1) action = CHECK;
-        else if(small==1 && selfIndex>6)action = CALL;
-        else action = FOLD;
+        else if(selfIndex<roundData.playerNum/2) action = FOLD;
+        else action = CALL;
       }
-      else action = FOLD;
 
 
-      if(action==FOLD && roundData.playerNum<=4) action = CALL;
-      if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
+      if(mulBlind<=10 && lastMoney/roundData.blind<=2) {
+          raiseMoney = roundData.blind;
+          if(action == FOLD ) action = CALL;
+      }
 
+      if((action == CALL || action == RAISE) && raiseMoney <0) action = FOLD;
+        if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
       if(mulBlind < 5) action = ALL_IN;
     }else{
       LOG2F(filename,"GAOPAI");
-      action = FOLD;
+        raiseMoney -= roundData.player[selfIndex].bet;
+        if(selfIndex>roundData.playerNum/2)
+        {
+              if(raiseNum==0 && raiseMoney>=0 ) action = CALL;
+              else if(raiseMoney>0 && raiseNum+callNum == attack  ) action=CALL;
+              else if(raiseNum+callNum<=2 && mul>=10) action = CALL;
+              else if(mul>=50) action = CALL;
+              else action = FOLD;
+        }else action = FOLD;
+
+      if(tight>0) action=FOLD;
+      if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
+
     }
     RU(sprintf(c,"@@@@@@action:%d lastMoney:%d@@@@@@@@",action,lastMoney););
     LOG2F(filename,c);
     roundData.stepNum+=1;
+    if(action==RAISE && raiseMoney<0) raiseMoney = 0;
+    if(roundData.stepNum>2 && action == RAISE) action = CALL;
     sendMsg(action,raiseMoney);
     LOG2F(filename,"AI_1 OVER!!!!!");
 }
@@ -313,7 +349,6 @@ int cardStyle(){
 
   return HIGH_CARD;
 }
-
 
 void stepTwoAI(){
   int myCardStyle=cardStyle();
@@ -382,4 +417,85 @@ void stepThreeAI(){
 
 void stepFourAI(){
   stepTwoAI();
+}
+void ai_type()
+{
+
+    RU(char filename[100];
+           sprintf(filename,"log_%d.txt",argsMsg.ID););
+    RU(char c[200];);
+    LOG2F(filename,"AI_TYPE");
+    for(int i=0;i<NUM_PLAYER;i++)
+    {
+        if(roundData.player[i].ID == argsMsg.ID) continue;
+        int pointa=roundData.player[i].handCard[0].point;
+        int pointb=roundData.player[i].handCard[1].point;
+        int colora=roundData.player[i].handCard[0].color;
+        int colorb=roundData.player[i].handCard[1].color;
+        //static bool flag=false;
+        int id = roundData.player[i].ID;
+        int idIndex = findTypeIndex(id);
+         RU(sprintf(c,"TTTTTTTTTTTT i:%d id:%d idIndex:%d pointa:%d pointb%d num:%dTTTTTTTTTTTTT",i,id,idIndex,pointa,pointb,roundData.playerNum););
+                LOG2F(filename,c);
+
+         RU(sprintf(c,"TTTTTTTTTTTT topHand:%d id:%d idIndex:%d  TTTTTTTTTTTTT",roundData.player[i].topHand,id,idIndex););
+                LOG2F(filename,c);
+        int action = roundData.player[i].actionHand[roundData.player[i].topHand-1];
+        float type=0;
+        if(IsVeryStrong(pointa,pointb))
+        {
+           if(action==FOLD) type = TYPE_IGNORE;
+        }
+        else if(IsStrong(pointa,pointb,colora,colorb))
+        {
+            if(action==ALL_IN) type = TYPE_ATTACK;
+        }
+        else if(IsMid(pointa,pointb))
+        {
+             if(action==ALL_IN) type = TYPE_ATTACK;
+             if(action==RAISE) type = TYPE_ATTACK;
+             if(action==FOLD) type = TYPE_TIGHT;
+        }
+        else if(IsLikeStrong(pointa,pointb,colora,colorb))
+        {
+
+        }
+        else if(IsBlend(pointa,pointb,colora,colorb))
+        {
+
+        }
+        else
+        {
+              if(action==ALL_IN) type = ALL_IN;
+             if(action==RAISE) type = TYPE_ATTACK;
+        }
+        //if(p==0&&type==0 && (action==RAISE || action==CALL)) type = TYPE_ATTACK;
+
+        if(roundData.roundNums>=50)
+        {
+
+            if(roundData.typePlayer[idIndex].allin>roundData.roundNums/4*3) roundData.typePlayer[i].type = TYPE_ALLIN;
+            if(roundData.typePlayer[idIndex].fold>roundData.roundNums/4*3) roundData.typePlayer[i].type = TYPE_TIGHT;
+            if(roundData.typePlayer[idIndex].raise>roundData.roundNums/2 || roundData.typePlayer[i].call>roundData.roundNums/2)
+            {
+                if(type==0) roundData.typePlayer[idIndex].type = TYPE_ATTACK;
+                else roundData.typePlayer[idIndex].type = type;
+            }
+            RU(sprintf(c,"TTTTTTTTTTTT idIndex:%d type:%d TTTTTTTTTTTTT",idIndex,roundData.typePlayer[idIndex].type););
+                LOG2F(filename,c);
+
+        }
+
+    }
+}
+int findTypeIndex(int id)
+{
+    for(int i=0;i<NUM_PLAYER;i++)
+    {
+        if(id == roundData.typePlayer[i].ID)
+        {
+            return i;
+        }
+    }
+    return 0;
 }

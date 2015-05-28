@@ -14,6 +14,7 @@
 #define RAISE		2
 #define ALL_IN		3
 #define FOLD		4
+#define BLIND   5
 extern char  actions[5][8];
 //阶段
 #define STEP_ZERO	 0	 //开始阶段 连接服务器 接收座次消息
@@ -23,6 +24,7 @@ extern char  actions[5][8];
 #define STEP_FOUR	 4   //五张公共牌阶段 接收第五张并处理
 #define STEP_FIVE	 5	 //接收摊牌和彩池分配消息
 
+#define MAXTYPE 500
 //牌型
 #define HIGH_CARD		1
 #define ONE_PAIR		2
@@ -34,5 +36,10 @@ extern char  actions[5][8];
 #define FOUR_OF_A_KIND	8
 #define STRAIGHT_FLUSH	9
 
+//玩家类型
+#define TYPE_IGNORE         1//可忽略
+#define TYPE_ALLIN          2//allin型
+#define TYPE_TIGHT          3//紧
+#define TYPE_ATTACK         4//大胆型
 
 #endif

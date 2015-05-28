@@ -13,10 +13,11 @@ int color2;
 
 //整体AI
 void ai();
-
+void ai_type();//计算玩家类型
 //step AI
 void stepOneAI();
 void stepTwoAI();
 void stepThreeAI();
 void stepFourAI();
+int findTypeIndex(int id);
 #endif
