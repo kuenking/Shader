@@ -166,6 +166,7 @@ void stepOneAI() {
         tight = roundData.tight;
         attack = roundData.attack;
         lastMoney = roundData.needBet;
+        lastMoney -= roundData.player[selfIndex].bet;
         noFoldNum = roundData.noFoldNum;
     }
     //判断
@@ -190,6 +191,7 @@ void stepOneAI() {
     int mul = 0;
     if(lastMoney!=0) mul = roundData.player[selfIndex].jetton / lastMoney;//手中筹码是下注额的倍数
     int mulBlind = roundData.player[selfIndex].jetton/roundData.blind;//手中筹码是盲注的倍数
+    float poolHand = lastMoney/roundData.poolSum;
     int mid = (roundData.playerNum-2)/2;
     int action = FOLD;
     LOG2F(filename,"判断-------");
@@ -273,7 +275,7 @@ void stepOneAI() {
         } else if(raiseNum==0 && callNum>=1) { //一个玩家跟注
             if(big==1) action = CHECK;
             else if(small==1) action = CALL;
-            else if(selfIndex<=roundData.playerNum/2) action = CHECK;
+            else if(selfIndex<=roundData.playerNum/2) action = FOLD;
             else action = CALL;
         }
 
@@ -283,7 +285,7 @@ void stepOneAI() {
             if(action == FOLD ) action = CALL;
         }
 
-        if((action == CALL || action == RAISE) && raiseMoney <0) action = CHECK;
+        if((action == CALL || action == RAISE) && raiseMoney <0) action = FOLD;
         if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
         if(mulBlind < 5) action = ALL_IN;
     } else {
@@ -293,7 +295,7 @@ void stepOneAI() {
         {
             if(raiseNum==0 && raiseMoney>=0 ) action = CALL;
             else if(raiseMoney>0 && raiseNum+callNum == attack  ) action=CALL;
-            else if(raiseNum+callNum<=2 && mul>=10) action = CALL;
+            else if(poolHand<0.2) action = CALL;
             else if(mul>=50) action = CALL;
             else action = FOLD;
         }
@@ -302,9 +304,9 @@ void stepOneAI() {
         else if(roundData.player[selfIndex].handCard[0].point>12 || roundData.player[selfIndex].handCard[1].point>12)
         {
             if((float)lastMoney/roundData.poolSum<0.25) action = CALL;
-            else action = CHECK;
+            else action = FOLD;
         }
-        else  action = CHECK;
+        else  action = FOLD;
 
         if(tight>0) action=FOLD;
         if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
