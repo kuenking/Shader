@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <math.h>
 double sub[15][9]= {
-    {0,0,0,0,0,0,0,0,0},
-    {0,0,0,0,0,0,0,0,0},
+    {100,100,100,100,100,100,100,100,100},
+    {100,100,100,100,100,100,100,100,100},
     {5.88,11.41,16.54,21.24,25.46,29.14,32.22,34.64,36.33},
     {5.39,10.48,15.26,19.67,23.7,27.29,30.4,33,35.03},
     {4.9,9.56,13.95,18.06,21.86,25.32,28.41,31.09,33.34},
@@ -20,8 +20,8 @@ double sub[15][9]= {
     {0,0,0,0,0,0,0,0,0}
 };
 double Ax[15][9]= {
-    {0,0,0,0,0,0,0,0,0},
-    {0,0,0,0,0,0,0,0,0},
+    {100,100,100,100,100,100,100,100,100},
+    {100,100,100,100,100,100,100,100,100},
     {11.02,20.826,29.552,37.315,44.223,50.37,55.84,60.706,65.037},
     {10.041,19.073,27.199,34.509,41.085,47,52.322,57.109,61.416},
     {9.061,17.301,24.795,31.609,37.806,43.442,48.567,53.227,57.465},
@@ -126,7 +126,7 @@ void stepOneAI() {
        sprintf(filename,"log_%d.txt",argsMsg.ID););
     RU(char c[200]; sprintf(c,"@@@@@@point1:%d point2:%d@@@@@@@@",point1,point2););
     // LOG2F(filename,c);
-    double p=1.0f;//本手牌概率
+    double p=100.0f;//本手牌概率
 
     if(point1<point2)//保证point1>point2
     {
@@ -152,27 +152,23 @@ void stepOneAI() {
     int selfIndex = roundData.selfIndex;
     int raiseMoney=0;
     //条件
-    int callNum=0,raiseNum=0,small=0,big=0,tight=0,attack=0;
+    int callNum=0,raiseNum=0,small=0,big=0,tight=0,attack=0,noFoldNum=0;
     //最后一家下注
     int lastMoney=roundData.blind;
 
     if(selfIndex == roundData.smallBlindID) small=1;
     else if(selfIndex ==  roundData.bigBlindID) big=1;
+
+
     {
         callNum = roundData.callNum;
         raiseNum = roundData.raiseNum;
         tight = roundData.tight;
         attack = roundData.attack;
         lastMoney = roundData.needBet;
+        noFoldNum = roundData.noFoldNum;
     }
     //判断
-    //raiseMoney -= lastMoney;
-    //if(lastMoney > roundData.player[selfIndex].jetton)
-    {
-        //      roundData.poolSum = roundData.player[selfIndex].bet*(raiseNum+callNum);
-    }
-    if(p!=0)//计算加注
-    {
         p=1-p/100;
         /*
           (所有-已下注)*胜率>=(已下注+将下注)*败率
@@ -184,9 +180,6 @@ void stepOneAI() {
         // raiseMoney = p*roundData.poolSum/(1+p);
         //  raiseMoney =( (int)((float)raiseMoney/roundData.blind+0.5))*roundData.blind;
         // raiseMoney -= roundData.player[selfIndex].bet;
-    } else {
-        raiseMoney=roundData.player[selfIndex].jetton;
-    }
     RU(sprintf(c,"@@@@@@selfIndex:%d raiseMoney:%d@@@@@@@@",selfIndex,raiseMoney););
     LOG2F(filename,c);
 
@@ -226,7 +219,7 @@ void stepOneAI() {
         LOG2F(filename,"Mid");
 
         if(raiseNum==0) {
-            if(small == 0 && big==0 && selfIndex<=mid ) action = FOLD;
+            if(small == 0 && big==0 && selfIndex<=mid && noFoldNum!=0 ) action = FOLD;
             else action = RAISE;
         }
         else if(raiseNum==1 && callNum==0) {
@@ -252,6 +245,7 @@ void stepOneAI() {
         LOG2F(filename,"LikeStrong");
         if(callNum==0 && raiseNum==0) { //全弃牌
             if(big==1 || small==1 || selfIndex>roundData.playerNum/2) action = RAISE;
+            else if(noFoldNum==0) action=CALL;
             else action = FOLD;
         } else if(raiseNum==0 && callNum>=1) {
             if(big==1) action = CHECK;
@@ -274,11 +268,12 @@ void stepOneAI() {
 
         if(callNum==0 && raiseNum==0) {//全弃牌
             if(big==1 || small==1 || selfIndex>roundData.playerNum/2) action = RAISE;
+            else if(noFoldNum==0) action = CALL;
             else action = FOLD;
         } else if(raiseNum==0 && callNum>=1) { //一个玩家跟注
             if(big==1) action = CHECK;
-            else if(small==1) sendMsg(CALL,0);
-            else if(selfIndex<roundData.playerNum/2) action = FOLD;
+            else if(small==1) action = CALL;
+            else if(selfIndex<=roundData.playerNum/2) action = CHECK;
             else action = CALL;
         }
 
@@ -288,20 +283,28 @@ void stepOneAI() {
             if(action == FOLD ) action = CALL;
         }
 
-        if((action == CALL || action == RAISE) && raiseMoney <0) action = FOLD;
+        if((action == CALL || action == RAISE) && raiseMoney <0) action = CHECK;
         if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
         if(mulBlind < 5) action = ALL_IN;
     } else {
         LOG2F(filename,"GAOPAI");
         raiseMoney -= roundData.player[selfIndex].bet;
-        if(selfIndex>roundData.playerNum/2)
+        if(selfIndex>=roundData.playerNum/2 || roundData.playerNum<=4)
         {
             if(raiseNum==0 && raiseMoney>=0 ) action = CALL;
             else if(raiseMoney>0 && raiseNum+callNum == attack  ) action=CALL;
             else if(raiseNum+callNum<=2 && mul>=10) action = CALL;
             else if(mul>=50) action = CALL;
             else action = FOLD;
-        } else action = FOLD;
+        }
+        else if(big==1 && raiseNum==0) action = RAISE;
+        else if(noFoldNum==0) action = RAISE;
+        else if(roundData.player[selfIndex].handCard[0].point>12 || roundData.player[selfIndex].handCard[1].point>12)
+        {
+            if((float)lastMoney/roundData.poolSum<0.25) action = CALL;
+            else action = CHECK;
+        }
+        else  action = CHECK;
 
         if(tight>0) action=FOLD;
         if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
@@ -312,59 +315,120 @@ void stepOneAI() {
     roundData.stepNum+=1;
     if(action==RAISE && raiseMoney<0) raiseMoney = 0;
     if(roundData.stepNum>2 && action == RAISE) action = CALL;
+    if(action==FOLD && noFoldNum==0) action=CALL;
     sendMsg(action,raiseMoney);
     LOG2F(filename,"AI_1 OVER!!!!!");
 }
 
 /*判断牌型*/
-int cardStyle() {
+int cardStyleTwo() {
     //同花
     int sameColor = 0;
     for(int i=0; i<4; i++)
-        if(argsMsg.colorNum[i]>=5) sameColor = 1;
+     {
+         if(argsMsg.colorNum[i]>=5) sameColor = 1;
+         if(argsMsg.colorNum[i]==4) sameColorP = 4/9;
+     }
 
     //判对子 3条 金刚 顺子
     int twoPairNum=0;//2同
     int threePairNum=0;//3同
     int kingKong=0;//4同
-    int maxp=0;//最大的对子
     int link=0;//顺子
+    maxPairHand=0;
     for(int i=2; i<15; i++)
     {
         if(argsMsg.pointNum[i]==2) {
             ++twoPairNum;
-            maxp=i;
+            maxPairHand=i;
         }
         else if(argsMsg.pointNum[i]==3) threePairNum++;
         else if(argsMsg.pointNum[i]==4) kingKong++;
-        if(i<11 && argsMsg.pointNum[i]+argsMsg.pointNum[i+1]+argsMsg.pointNum[i+2]+argsMsg.pointNum[i+3]+argsMsg.pointNum[i+4]==5) link=1;
+        if(i<11 && argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1 && argsMsg.pointNum[i+3]>=1 && argsMsg.pointNum[i+4]>=1) link=1;
     }
-    if(argsMsg.pointNum[1]+argsMsg.pointNum[2]+argsMsg.pointNum[3]+argsMsg.pointNum[4]+argsMsg.pointNum[14]==5) link=1;
+    if(argsMsg.pointNum[5]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1 && argsMsg.pointNum[4]>=1 && argsMsg.pointNum[14]>=1) link=1;
+    linkP=0.0f;
+    if(link==0)
+    {
+        for(int i=2; i<11; i++)
+        {
+            if(argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1 && argsMsg.pointNum[i+3]>=1) linkP=2;
+        }
+        if(argsMsg.pointNum[1]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1 && argsMsg.pointNum[4]>=1) linkP=1;
+        if(argsMsg.pointNum[11]>=1 && argsMsg.pointNum[12]>=1 && argsMsg.pointNum[13]>=1 && argsMsg.pointNum[14]>=1) linkP=1;
+    }
+    linkP = linkP*4/47;
 
-    if(sameColor) {
-        if(link) {
-            //同花顺
-            return STRAIGHT_FLUSH;
-        } else {
-            //同花
-            return STRAIGHT;
+
+    maxp=0;
+    int pointNum[15];
+    for(int i=0;i<15;i++) pointNum[i] = 0;
+    for(int i=0;i<3;++i){
+        pointNum[roundData.pubCard[i].point]++;
+        if(roundData.pubCard[i].point>maxp) maxp = roundData.pubCard[i].point;
+    }
+
+    ggpType=-1;
+    for(int i=2;i<15;i++)
+    {
+        if(pointNum[i]==3)
+        {
+           ggpType = THREE_OF_A_KIND;
+           break;
+        }
+        if(pointNum[i]==2)
+        {
+           ggpType = TWO_PAIR;
+           break;
+        }
+        if(pointNum[i]==1)
+        {
+           ggpType = ONE_PAIR;
+           break;
         }
     }
-    if(link) {
-        //顺子
-        return FLUSH;
+    if(ggpType==-1)
+    {
+        for(int i=2; i<13; i++)
+        {
+            if(argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1) ggpType = STRAIGHT;
+        }
+        if(argsMsg.pointNum[14]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1) ggpType=STRAIGHT;
+        if(roundData.pubCard[0].color == roundData.pubCard[1].color && roundData.pubCard[0].color == roundData.pubCard[2].color)
+        {
+                if(ggpType == STRAIGHT) ggpType = STRAIGHT_FLUSH;
+                else ggpType = FLUSH;
+        }
     }
+
+
+    if(sameColor && link)   //同花顺
+           return STRAIGHT_FLUSH;
     if(kingKong) {
         return FOUR_OF_A_KIND;
     }
     if(threePairNum>0 && twoPairNum>0) {
         return FULL_HOUSE;
     }
+    if(sameColor)   return STRAIGHT;
+
+    if(link) {
+        //顺子
+        return FLUSH;
+    }
+
+
+
+
     if(threePairNum>0) {
         return THREE_OF_A_KIND;
     }
-    if(twoPairNum>0) {
+    if(twoPairNum>=2) {
         return TWO_PAIR;
+    }
+    if(twoPairNum==1)
+    {
+        return ONE_PAIR;
     }
 
     return HIGH_CARD;
@@ -373,11 +437,11 @@ int cardStyle() {
 
 
 void stepTwoAI() {
-    double p=1.0f;//本手牌概率
+    double p=100.0f;//本手牌概率
     int selfIndex = roundData.selfIndex;
     int raiseMoney=0;
     //条件
-    int callNum=0,raiseNum=0,small=0,big=0,tight=0,attack=0;
+    int callNum=0,raiseNum=0,small=0,big=0,tight=0,attack=0,noFoldNum=0;
     //最后一家下注
     int lastMoney=roundData.blind;
 
@@ -389,6 +453,8 @@ void stepTwoAI() {
         tight = roundData.tight;
         attack = roundData.attack;
         lastMoney = roundData.needBet;
+        lastMoney -= roundData.player[selfIndex].bet;
+        noFoldNum = roundData.noFoldNum;
     }
 
     int liveNum=0;
@@ -396,7 +462,7 @@ void stepTwoAI() {
         if(roundData.player[i].isLive)
             ++liveNum;
 
-    int myStyle=cardStyle();
+    int myStyle=cardStyleTwo();
     p=pp[myStyle][liveNum-1];
     if(p!=0) {
         p=1-p/100;
@@ -408,116 +474,734 @@ void stepTwoAI() {
     int mul = 0;
     if(lastMoney!=0) mul = roundData.player[selfIndex].jetton / lastMoney;//手中筹码是下注额的倍数
     int mulBlind = roundData.player[selfIndex].jetton/roundData.blind;//手中筹码是盲注的倍数
-    int mid = (roundData.playerNum-2)/2;
     int action = FOLD;
-    raiseMoney -= lastMoney;
-    if(myStyle<=1) {
+    raiseMoney -= roundData.player[selfIndex].bet;//减去自己已经下的注
+    lastMoney -= roundData.player[selfIndex].bet;
+    float poolHand = lastMoney / roundData.poolSum;//底池赔率
+    poolHand = poolHand*1.2;
+    if(myStyle<=1) {//同花顺和4同 不虚
         action = RAISE;
         raiseMoney = (rand()%3+2)*roundData.blind;
-        raiseMoney -= roundData.player[selfIndex].bet;
-        if(raiseMoney <=0 ) action = CALL;
-    } else if(myStyle<=2) {
-        if(raiseNum >= 4) action = FOLD;
-        else if(raiseNum==1 && callNum >=1) action = CALL;
-        else if(big==1 || small==1 || roundData.playerNum<4 ) action = RAISE;
-        else if(tight>0) action=FOLD;
-        else if(raiseNum == 1 && callNum==0 && selfIndex<=mid)action = FOLD;
-        else action = RAISE;
-        if((action == CALL || action == RAISE) && raiseMoney <0 && mul<=5) action = FOLD;
-        if(raiseMoney > roundData.blind*2) raiseMoney = roundData.blind*2; //最多2个大满主
-        if(mulBlind < 5) action = ALL_IN;
-    } else if(myStyle<=5) {
-        if(raiseNum==0) {
-            if(small == 0 && big==0 && selfIndex<=mid ) action = FOLD;
-            else action = RAISE;
+    } else if(myStyle==FULL_HOUSE) {//葫芦
+        if(ggpType != THREE_OF_A_KIND)//不虚
+        {
+             action = RAISE;
+             raiseMoney = (rand()%3+2)*roundData.blind;
+        }else
+        {
+            int x = roundData.player[selfIndex].handCard[0].point;
+            float xp = (14-x)*4/47 * ((14-x)*4-1)/46;
+            xp = 1-xp;//银钱概率
+            if(xp<poolHand && noFoldNum!=0) action = FOLD;
+            else if(xp/poolHand < 1.2) action = CALL;
+            else
+            {
+                action = RAISE;
+                raiseMoney = raiseMoney > roundData.poolSum/2 ? roundData.poolSum/2:raiseMoney;
+            }
         }
-        else if(raiseNum==1 && callNum==0) {
-            if(big==1) action = CALL;
-            else if(attack==1) action=CALL;
-            else if(roundData.playerNum>5) action=FOLD;
+    } else if(myStyle==FLUSH || myStyle == STRAIGHT) {//同花 huo sunzhi
+
+        if(roundData.player[selfIndex].handCard[0].point>=maxp||roundData.player[selfIndex].handCard[0].point>=maxp)
+        {
+                action = RAISE;
+                raiseMoney = raiseMoney > roundData.poolSum/2 ? roundData.poolSum/2:raiseMoney;
+        }
+        else
+        {
+            if(raiseNum >= 2) action = FOLD;
             else action = CALL;
-        } else if(raiseNum==1 && callNum>0) {
-            if(big==1 || (color1==color2 && point1==13 && point2==12)) action = CALL;
-            else if(attack==(raiseNum+callNum)) action=CALL;
-            else action = FOLD;
+            if(poolHand<0.2 && action ==FOLD) action = CALL;
+            if(raiseMoney > roundData.blind*2) raiseMoney = roundData.blind*2; //最多2个大满主
         }
-        else action = FOLD;
 
-        if(mul>=10 && action == FOLD ) action = CALL;
-
-        if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
-
-        if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*(rand()%2+1); //最多2个大满主
 
         if(mulBlind <= 5)  action = ALL_IN;
-    } else if(myStyle<=6) {
-        if(callNum==0 && raiseNum==0) { //全弃牌
-            if(big==1 || small==1 || selfIndex>roundData.playerNum/2) action = RAISE;
-            else action = FOLD;
-        } else if(raiseNum==0 && callNum>=1) {
-            if(big==1) action = CHECK;
-            else if(small==1  || selfIndex>roundData.playerNum/2) action = CALL;
-            else action = FOLD;
-        } else if(raiseNum==1 && callNum>=0) {
-            if(big==1 ) action = CALL;
-            else if(attack==(raiseNum+callNum))action = CALL;
-            else if(tight>0) action=FOLD;
-            else action = FOLD;
-        } else action = FOLD;
-        if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
-        // if(action==FOLD && roundData.playerNum<=4) action = CALL;
-        if((action == CALL || action == RAISE) && raiseMoney <0 && mul<5) action = FOLD;
-
-        if(mulBlind < 5) action = ALL_IN;
-    } else if(myStyle==7) { //混合牌 //KJo,kTo,QJo,JTo / A9s-A2s,98s,87s
-        if(callNum==0 && raiseNum==0) {//全弃牌
-            if(big==1 || small==1 || selfIndex>roundData.playerNum/2) action = RAISE;
-            else action = FOLD;
-        } else if(raiseNum==0 && callNum>=1) { //一个玩家跟注
-            if(big==1) action = CHECK;
-            else if(small==1) sendMsg(CALL,0);
-            else if(selfIndex<roundData.playerNum/2) action = FOLD;
+    }else if(myStyle == THREE_OF_A_KIND)//3tiao
+    {
+        if(ggpType == THREE_OF_A_KIND)
+        {
+            if(roundData.player[selfIndex].handCard[0].point<12 && roundData.player[selfIndex].handCard[0].point<12)
+            {
+                if(noFoldNum==0) action=CALL;
+                else action = FOLD;
+            }
             else action = CALL;
         }
+        else
+        {
+            action = RAISE;
+            if(raiseMoney > roundData.blind*3) raiseMoney = roundData.blind*3; //最多2个大满主
+        }
+    }
+    else if(myStyle== TWO_PAIR) {//2对
+        if(ggpType==ONE_PAIR)
+        {
+            if(raiseNum>=2 || poolHand>0.2) action = FOLD;
+            else if(raiseNum>0)
+            {
+                if(poolHand>0.25) action = FOLD;
+                else action = CALL;
+            }
+            else action = RAISE;
+            if(raiseMoney > roundData.blind) raiseMoney = roundData.blind; //最多2个大满主
 
-
-        if(mulBlind<=10 && lastMoney/roundData.blind<=2) {
-            raiseMoney = roundData.blind;
-            if(action == FOLD ) action = CALL;
+        }else
+        {
+            action = RAISE;
+            if(poolHand<0.25) raiseMoney = 0.5*roundData.poolSum;
         }
 
-        if((action == CALL || action == RAISE) && raiseMoney <0) action = FOLD;
+        if(mulBlind < 5) action = ALL_IN;
+    } else if(myStyle==ONE_PAIR) { //1对
+        if(ggpType == ONE_PAIR)
+        {
+            if(roundData.player[selfIndex].handCard[0].point>=maxp || roundData.player[selfIndex].handCard[0].point>=maxp)
+            {
+                if(raiseNum >= 3) action=FOLD;
+                else
+                {
+                    if(rand()%2==0) action=CALL;
+                    else action=RAISE;
+                    if(raiseMoney > roundData.blind) raiseMoney = roundData.blind; //最多2个大满主
+                }
+            }
+            else
+            {
+                if(poolHand<0.25) action = CALL;
+                else action = FOLD;
+                if(raiseNum >= 2) action=FOLD;
+
+            }
+        }else
+        {
+            if(maxPairHand >= maxp)
+            {
+                if(rand()%2==0) action=CALL;
+                else action=RAISE;
+                if(poolHand>0.2) action = CALL;
+            }else
+            {
+                if(raiseNum>=2) action = FOLD;
+                else action = CALL;
+            }
+        }
+
         if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
         if(mulBlind < 5) action = ALL_IN;
-    } else {
-        raiseMoney -= roundData.player[selfIndex].bet;
-        if(selfIndex>roundData.playerNum/2)
-        {
-            if(raiseNum==0 && raiseMoney>=0 ) action = CALL;
-            else if(raiseMoney>0 && raiseNum+callNum == attack  ) action=CALL;
-            else if(raiseNum+callNum<=2 && mul>=10) action = CALL;
-            else if(mul>=50) action = CALL;
-            else action = FOLD;
-        } else action = FOLD;
+    } else {//高牌
 
-        if(tight>0) action=FOLD;
+        if(sameColorP>0 || linkP>0)
+        {
+            if(sameColorP>poolHand || linkP>poolHand)  action = CALL;
+            else action = FOLD;
+        }
+        else if((roundData.player[selfIndex].handCard[0].point>=maxp || roundData.player[selfIndex].handCard[0].point>=maxp) && maxPairHand>=12)
+        {
+            if(ggpType == STRAIGHT || ggpType == FLUSH)
+            {
+                action = FOLD;
+            }
+            else action = CALL;
+        }
+        else
+        {
+            if(raiseNum ==0 || selfIndex==big ) action = CALL;
+            else action = FOLD;
+        }
+        if(tight>0 && maxp>=12) action=FOLD;
         if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
 
     }
     roundData.stepNum+=1;
     if(action==RAISE && raiseMoney<0) raiseMoney = 0;
-    if(roundData.stepNum>2 && action == RAISE) action = CALL;
+    if(roundData.stepNum>3 && action == RAISE) action = CALL;
+    if(action==FOLD && noFoldNum==0) action==CALL;
     sendMsg(action,raiseMoney);
 }
 
 
 
-void stepThreeAI() {
-    stepTwoAI();
+/*判断牌型*/
+int cardStyleThree() {
+    //同花
+    int sameColor = 0;
+    for(int i=0; i<4; i++)
+     {
+         if(argsMsg.colorNum[i]>=5) sameColor = 1;
+         if(argsMsg.colorNum[i]==4) sameColorP = 2/9;
+     }
+
+    //判对子 3条 金刚 顺子
+    int twoPairNum=0;//2同
+    int threePairNum=0;//3同
+    int kingKong=0;//4同
+    int link=0;//顺子
+    maxPairHand=0;
+    for(int i=2; i<15; i++)
+    {
+        if(argsMsg.pointNum[i]==2) {
+            ++twoPairNum;
+            maxPairHand=i;
+        }
+        else if(argsMsg.pointNum[i]==3) threePairNum++;
+        else if(argsMsg.pointNum[i]==4) kingKong++;
+        if(i<11 && argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1 && argsMsg.pointNum[i+3]>=1 && argsMsg.pointNum[i+4]>=1) link=1;
+    }
+    if(argsMsg.pointNum[14]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1 && argsMsg.pointNum[4]>=1 && argsMsg.pointNum[5]>=1) link=1;
+    linkP=0;
+    if(link==0)
+    {
+        for(int i=2; i<11; i++)
+        {
+            if(argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1 && argsMsg.pointNum[i+3]>=1) linkP=2;
+        }
+        if(argsMsg.pointNum[14]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1 && argsMsg.pointNum[4]>=1) linkP=1;
+        if(argsMsg.pointNum[11]>=1 && argsMsg.pointNum[12]>=1 && argsMsg.pointNum[13]>=1 && argsMsg.pointNum[14]>=1) linkP=1;
+    }
+    linkP = linkP*2/(50 - 4);
+
+
+    maxp=0;
+    int pointNum[15];
+    for(int i=0;i<15;i++) pointNum[i] = 0;
+    for(int i=0;i<4;++i){
+        pointNum[roundData.pubCard[i].point]++;
+        if(roundData.pubCard[i].point>maxp) maxp = roundData.pubCard[i].point;
+    }
+
+    ggpType=-1;
+    for(int i=2;i<15;i++)
+    {
+        if(pointNum[i]==3)
+        {
+           ggpType = THREE_OF_A_KIND;
+           break;
+        }
+        if(pointNum[i]==2)
+        {
+           ggpType = TWO_PAIR;
+           break;
+        }
+        if(pointNum[i]==1)
+        {
+           ggpType = ONE_PAIR;
+           break;
+        }
+    }
+    if(ggpType==-1)
+    {
+        for(int i=2; i<12; i++)
+        {
+            if(argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1 && argsMsg.pointNum[i+3]>=1) ggpType = STRAIGHT;
+        }
+        if(argsMsg.pointNum[14]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1 && argsMsg.pointNum[4]>=1) ggpType=STRAIGHT;
+        if(roundData.pubCard[0].color == roundData.pubCard[1].color && roundData.pubCard[0].color == roundData.pubCard[2].color)
+        {
+                if(ggpType == STRAIGHT) ggpType = STRAIGHT_FLUSH;
+                else ggpType = FLUSH;
+        }
+    }
+
+
+    if(sameColor && link)   //同花顺
+           return STRAIGHT_FLUSH;
+    if(kingKong) {
+        return FOUR_OF_A_KIND;
+    }
+    if(threePairNum>0 && twoPairNum>0) {
+        return FULL_HOUSE;
+    }
+    if(sameColor)   return STRAIGHT;
+
+    if(link) {
+        //顺子
+        return FLUSH;
+    }
+
+
+
+
+    if(threePairNum>0) {
+        return THREE_OF_A_KIND;
+    }
+    if(twoPairNum>=2) {
+        return TWO_PAIR;
+    }
+    if(twoPairNum==1)
+    {
+        return ONE_PAIR;
+    }
+
+    return HIGH_CARD;
 }
 
+
+
+void stepThreeAI() {
+    double p=100.0f;//本手牌概率
+    int selfIndex = roundData.selfIndex;
+    int raiseMoney=0;
+    //条件
+    int callNum=0,raiseNum=0,small=0,big=0,tight=0,attack=0,noFoldNum=0;
+    //最后一家下注
+    int lastMoney=roundData.blind;
+
+    if(selfIndex == roundData.smallBlindID) small=1;
+    else if(selfIndex ==  roundData.bigBlindID) big=1;
+    {
+        callNum = roundData.callNum;
+        raiseNum = roundData.raiseNum;
+        tight = roundData.tight;
+        attack = roundData.attack;
+        lastMoney = roundData.needBet;
+        lastMoney -= roundData.player[selfIndex].bet;
+        noFoldNum = roundData.noFoldNum;
+    }
+
+    int liveNum=0;
+    for(int i=0; i<roundData.playerNum; ++i)
+        if(roundData.player[i].isLive)
+            ++liveNum;
+
+    int myStyle=cardStyleThree();
+    p=pp[myStyle][liveNum-1];
+    if(p!=0) {
+        p=1-p/100;
+        raiseMoney=(roundData.poolSum-roundData.player[selfIndex].bet)*p/(1-p)-roundData.player[selfIndex].bet;//加注后总额
+    } else {
+        raiseMoney=roundData.player[selfIndex].jetton;
+    }
+    srand(time(0));
+    int mul = 0;
+    if(lastMoney!=0) mul = roundData.player[selfIndex].jetton / lastMoney;//手中筹码是下注额的倍数
+    int mulBlind = roundData.player[selfIndex].jetton/roundData.blind;//手中筹码是盲注的倍数
+    int action = FOLD;
+    raiseMoney -= roundData.player[selfIndex].bet;//减去自己已经下的注
+    lastMoney -= roundData.player[selfIndex].bet;
+    float poolHand = lastMoney / roundData.poolSum;//底池赔率
+    poolHand = poolHand*1.2;
+    if(myStyle<=1) {//同花顺和4同 不虚
+        action = RAISE;
+        raiseMoney = (rand()%3+2)*roundData.blind;
+    } else if(myStyle==FULL_HOUSE) {//葫芦
+        if(ggpType != THREE_OF_A_KIND)//不虚
+        {
+             action = RAISE;
+             raiseMoney = (rand()%3+2)*roundData.blind;
+        }else
+        {
+            int x = roundData.player[selfIndex].handCard[0].point;
+            float xp = (14-x)*4/46 * ((14-x)*4-1)/45;
+            xp = 1-xp;//银钱概率
+            if(xp<poolHand) action = FOLD;
+            else if(xp/poolHand < 1.2) action = CALL;
+            else
+            {
+                action = RAISE;
+                raiseMoney = raiseMoney > roundData.poolSum/2 ? roundData.poolSum/2:raiseMoney;
+            }
+        }
+    } else if(myStyle==FLUSH || myStyle == STRAIGHT) {//同花 huo sunzhi
+        float xp=0;
+        if(roundData.player[selfIndex].handCard[0].point>=maxp||roundData.player[selfIndex].handCard[0].point>=maxp)
+        {
+                action = RAISE;
+                raiseMoney = raiseMoney > roundData.poolSum/2 ? roundData.poolSum/2:raiseMoney;
+        }
+        else
+        {
+            if(raiseNum >= 2) action = FOLD;
+            else action = CALL;
+            if(poolHand<0.2 && action ==FOLD) action = CALL;
+            if(raiseMoney > roundData.blind*2) raiseMoney = roundData.blind*2; //最多2个大满主
+        }
+
+
+        if(mulBlind <= 5)  action = ALL_IN;
+    }else if(myStyle == THREE_OF_A_KIND)//3tiao
+    {
+        if(ggpType == THREE_OF_A_KIND)
+        {
+            if(roundData.player[selfIndex].handCard[0].point<12 && roundData.player[selfIndex].handCard[0].point<12)
+            {
+                action = FOLD;
+            }
+            else action = CALL;
+        }
+        else
+        {
+            action = RAISE;
+            if(raiseMoney > roundData.blind*3) raiseMoney = roundData.blind*3; //最多2个大满主
+        }
+    }
+    else if(myStyle== TWO_PAIR) {//2对
+        if(ggpType==ONE_PAIR)
+        {
+            if(raiseNum>=2 || poolHand>0.2) action = FOLD;
+            else if(raiseNum>0)
+            {
+                if(poolHand>0.25) action = FOLD;
+                else action = CALL;
+            }
+            else action = RAISE;
+            if(raiseMoney > roundData.blind) raiseMoney = roundData.blind; //最多2个大满主
+
+        }else
+        {
+            action = RAISE;
+            if(poolHand<0.25) raiseMoney = 0.5*roundData.poolSum;
+        }
+
+        if(mulBlind < 5) action = ALL_IN;
+    } else if(myStyle==ONE_PAIR) { //1对
+        if(ggpType == ONE_PAIR)
+        {
+            if(roundData.player[selfIndex].handCard[0].point>=maxp || roundData.player[selfIndex].handCard[0].point>=maxp)
+            {
+                if(raiseNum >= 3) action=FOLD;
+                else
+                {
+                    if(rand()%2==0) action=CALL;
+                    else action=RAISE;
+                    if(raiseMoney > roundData.blind) raiseMoney = roundData.blind; //最多2个大满主
+                }
+            }
+            else
+            {
+                if(poolHand<0.25) action = CALL;
+                else action = FOLD;
+                if(raiseNum >= 2) action=FOLD;
+            }
+        }else
+        {
+            if(maxPairHand >= maxp)
+            {
+                if(rand()%2==0) action=CALL;
+                else action=RAISE;
+                if(poolHand>0.2) action = CALL;
+            }else
+            {
+                if(raiseNum>=2) action = FOLD;
+                else action = CALL;
+            }
+        }
+
+        if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
+        if(mulBlind < 5) action = ALL_IN;
+    } else {//高牌
+
+        if(sameColorP>0 || linkP>0)
+        {
+            if(sameColorP>poolHand || linkP>poolHand)  action = CALL;
+            else action = FOLD;
+        }
+        else if((roundData.player[selfIndex].handCard[0].point>=maxp || roundData.player[selfIndex].handCard[0].point>=maxp) && maxPairHand>=12)
+        {
+            if(ggpType == STRAIGHT || ggpType == FLUSH)
+            {
+                action = FOLD;
+            }
+            else action = CALL;
+        }
+        else
+        {
+            if(raiseNum ==0 && selfIndex==big ) action = CALL;
+            else action = FOLD;
+        }
+        if(tight>0 && maxp>=12) action=FOLD;
+        if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
+
+    }
+    roundData.stepNum+=1;
+    if(action==RAISE && raiseMoney<0) raiseMoney = 0;
+    if(roundData.stepNum>3 && action == RAISE) action = CALL;
+    if(action==FOLD && noFoldNum==0) action==CALL;
+    sendMsg(action,raiseMoney);
+}
+
+
+/*判断牌型*/
+int cardStyleFour() {
+    //同花
+    int sameColor = 0;
+    for(int i=0; i<4; i++)
+     {
+         if(argsMsg.colorNum[i]>=5) sameColor = 1;
+     }
+
+    //判对子 3条 金刚 顺子
+    int twoPairNum=0;//2同
+    int threePairNum=0;//3同
+    int kingKong=0;//4同
+    int link=0;//顺子
+    maxPairHand=0;
+    for(int i=2; i<15; i++)
+    {
+        if(argsMsg.pointNum[i]==2) {
+            ++twoPairNum;
+            maxPairHand=i;
+        }
+        else if(argsMsg.pointNum[i]==3) threePairNum++;
+        else if(argsMsg.pointNum[i]==4) kingKong++;
+        if(i<11 && argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1 && argsMsg.pointNum[i+3]>=1 && argsMsg.pointNum[i+4]>=1) link=1;
+    }
+    if(argsMsg.pointNum[14]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1 && argsMsg.pointNum[4]>=1 && argsMsg.pointNum[5]>=1) link=1;
+
+    maxp=0;
+    int pointNum[15];
+    for(int i=0;i<15;i++) pointNum[i] = 0;
+    for(int i=0;i<5;++i){
+        pointNum[roundData.pubCard[i].point]++;
+        if(roundData.pubCard[i].point>maxp) maxp = roundData.pubCard[i].point;
+    }
+
+    ggpType=-1;
+    for(int i=2;i<15;i++)
+    {
+        if(pointNum[i]==3)
+        {
+           ggpType = THREE_OF_A_KIND;
+           break;
+        }
+        if(pointNum[i]==2)
+        {
+           ggpType = TWO_PAIR;
+           break;
+        }
+        if(pointNum[i]==1)
+        {
+           ggpType = ONE_PAIR;
+           break;
+        }
+    }
+    if(ggpType==-1)
+    {
+        for(int i=2; i<12; i++)
+        {
+            if(argsMsg.pointNum[i]>=1 && argsMsg.pointNum[i+1]>=1 && argsMsg.pointNum[i+2]>=1 && argsMsg.pointNum[i+3]>=1) ggpType = STRAIGHT;
+        }
+        if(argsMsg.pointNum[14]>=1 && argsMsg.pointNum[2]>=1 && argsMsg.pointNum[3]>=1 && argsMsg.pointNum[4]>=1) ggpType=STRAIGHT;
+        if(roundData.pubCard[0].color == roundData.pubCard[1].color && roundData.pubCard[0].color == roundData.pubCard[2].color)
+        {
+                if(ggpType == STRAIGHT) ggpType = STRAIGHT_FLUSH;
+                else ggpType = FLUSH;
+        }
+    }
+
+
+    if(sameColor && link)   //同花顺
+           return STRAIGHT_FLUSH;
+    if(kingKong) {
+        return FOUR_OF_A_KIND;
+    }
+    if(threePairNum>0 && twoPairNum>0) {
+        return FULL_HOUSE;
+    }
+    if(sameColor)   return STRAIGHT;
+
+    if(link) {
+        //顺子
+        return FLUSH;
+    }
+
+
+
+
+    if(threePairNum>0) {
+        return THREE_OF_A_KIND;
+    }
+    if(twoPairNum>=2) {
+        return TWO_PAIR;
+    }
+    if(twoPairNum==1)
+    {
+        return ONE_PAIR;
+    }
+
+    return HIGH_CARD;
+}
+
+
+
 void stepFourAI() {
-    stepTwoAI();
+    double p=100.0f;//本手牌概率
+    int selfIndex = roundData.selfIndex;
+    int raiseMoney=0;
+    //条件
+    int callNum=0,raiseNum=0,small=0,big=0,tight=0,attack=0,noFoldNum=0;
+    //最后一家下注
+    int lastMoney=roundData.blind;
+
+    if(selfIndex == roundData.smallBlindID) small=1;
+    else if(selfIndex ==  roundData.bigBlindID) big=1;
+    {
+        callNum = roundData.callNum;
+        raiseNum = roundData.raiseNum;
+        tight = roundData.tight;
+        attack = roundData.attack;
+        lastMoney = roundData.needBet;
+        lastMoney -= roundData.player[selfIndex].bet;
+        noFoldNum = roundData.noFoldNum;
+    }
+
+    int liveNum=0;
+    for(int i=0; i<roundData.playerNum; ++i)
+        if(roundData.player[i].isLive)
+            ++liveNum;
+
+    int myStyle=cardStyleFour();
+    p=pp[myStyle][liveNum-1];
+    if(p!=0) {
+        p=1-p/100;
+        raiseMoney=(roundData.poolSum-roundData.player[selfIndex].bet)*p/(1-p)-roundData.player[selfIndex].bet;//加注后总额
+    } else {
+        raiseMoney=roundData.player[selfIndex].jetton;
+    }
+    srand(time(0));
+    int mul = 0;
+    if(lastMoney!=0) mul = roundData.player[selfIndex].jetton / lastMoney;//手中筹码是下注额的倍数
+    int mulBlind = roundData.player[selfIndex].jetton/roundData.blind;//手中筹码是盲注的倍数
+    int action = FOLD;
+    raiseMoney -= roundData.player[selfIndex].bet;//减去自己已经下的注
+    lastMoney -= roundData.player[selfIndex].bet;
+    float poolHand = lastMoney / roundData.poolSum;//底池赔率
+    poolHand = poolHand*1.2;
+    if(myStyle<=1) {//同花顺和4同 不虚
+        action = RAISE;
+        raiseMoney = (rand()%3+2)*roundData.blind;
+    } else if(myStyle==FULL_HOUSE) {//葫芦
+        if(ggpType != THREE_OF_A_KIND)//不虚
+        {
+             action = RAISE;
+             raiseMoney = (rand()%3+2)*roundData.blind;
+        }else
+        {
+            int x = roundData.player[selfIndex].handCard[0].point;
+            float xp = (14-x)*4/46 * ((14-x)*4-1)/45;
+            xp = 1-xp;//银钱概率
+            if(xp<poolHand) action = FOLD;
+            else if(xp/poolHand < 1.2) action = CALL;
+            else
+            {
+                action = RAISE;
+                raiseMoney = raiseMoney > roundData.poolSum/2 ? roundData.poolSum/2:raiseMoney;
+            }
+        }
+    } else if(myStyle==FLUSH || myStyle == STRAIGHT) {//同花 huo sunzhi
+        if(roundData.player[selfIndex].handCard[0].point>=maxp||roundData.player[selfIndex].handCard[0].point>=maxp)
+        {
+                action = RAISE;
+                raiseMoney = raiseMoney > roundData.poolSum/2 ? roundData.poolSum/2:raiseMoney;
+        }
+        else
+        {
+            if(raiseNum >= 2) action = FOLD;
+            else action = CALL;
+            if(poolHand<0.2 && action ==FOLD) action = CALL;
+            if(raiseMoney > roundData.blind*2) raiseMoney = roundData.blind*2; //最多2个大满主
+        }
+
+
+        if(mulBlind <= 5)  action = ALL_IN;
+    }else if(myStyle == THREE_OF_A_KIND)//3tiao
+    {
+        if(ggpType == THREE_OF_A_KIND)
+        {
+            if(roundData.player[selfIndex].handCard[0].point<12 && roundData.player[selfIndex].handCard[0].point<12)
+            {
+                action = FOLD;
+            }
+            else action = CALL;
+        }
+        else
+        {
+            action = RAISE;
+            if(raiseMoney > roundData.blind*3) raiseMoney = roundData.blind*3; //最多2个大满主
+        }
+    }
+    else if(myStyle== TWO_PAIR) {//2对
+        if(ggpType==ONE_PAIR)
+        {
+            if(maxPairHand>maxp )
+            {
+                action = CALL;
+            }
+            else if(raiseNum>=2 || poolHand>0.2) action = FOLD;
+            else if(raiseNum>0)
+            {
+                if(poolHand>0.25) action = FOLD;
+                else action = CALL;
+            }
+            else action = RAISE;
+            if(raiseMoney > roundData.blind) raiseMoney = roundData.blind; //最多2个大满主
+
+        }else
+        {
+            action = RAISE;
+            if(poolHand<0.25) raiseMoney = 0.5*roundData.poolSum;
+            else action = CALL;
+            if(raiseNum>=1)
+            {
+                if(ggpType==STRAIGHT || ggpType == FLUSH) action = FOLD;
+            }
+        }
+
+        if(mulBlind < 5) action = ALL_IN;
+    } else if(myStyle==ONE_PAIR) { //1对
+        if(ggpType == ONE_PAIR)
+        {
+            if(roundData.player[selfIndex].handCard[0].point>=maxp || roundData.player[selfIndex].handCard[0].point>=maxp)
+            {
+                if(raiseNum+callNum >= 1) action=FOLD;
+                else
+                {
+                    if(big==1 || small==1)
+                    {
+                        if(rand()%2==0) action=CALL;
+                        else action=RAISE;
+                        if(raiseMoney > roundData.blind) raiseMoney = roundData.blind; //最多2个大满主
+
+                    }else
+                    {
+                        action = FOLD;
+                   }
+                }
+            }
+            else
+            {
+                if(poolHand<0.2) action = CALL;
+                else action = FOLD;
+                if(raiseNum >= 2) action=FOLD;
+            }
+        }else
+        {
+            if(maxPairHand >= maxp)
+            {
+                if(rand()%2==0) action=CALL;
+                else action=RAISE;
+                if(poolHand>0.25) action = CALL;
+                else action = FOLD;
+                if(raiseNum>=2) action = FOLD;
+            }else
+            {
+                if(raiseNum+callNum>=2) action = FOLD;
+                else action = CALL;
+            }
+        }
+
+        if(raiseMoney > roundData.blind) raiseMoney = roundData.blind*rand()%2; //最多1个大满主
+        if(mulBlind < 5) action = ALL_IN;
+    } else {//高牌
+
+        action=FOLD;
+
+    }
+    roundData.stepNum+=1;
+    if(action==RAISE && raiseMoney<0) raiseMoney = 0;
+    if(roundData.stepNum>3 && action == RAISE) action = CALL;
+    if(action==FOLD && noFoldNum==0) action==CALL;
+    sendMsg(action,raiseMoney);
 }
 void ai_type()
 {

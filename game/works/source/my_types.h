@@ -105,6 +105,7 @@ typedef struct {
     int stepNum;//当前阶段经历次数
     int raiseNum;
     int callNum;
+    int noFoldNum;//非弃牌玩家数
     int tight;
     int attack;
 } Round;

@@ -30,8 +30,8 @@ extern char  actions[5][8];
 #define ONE_PAIR       	7
 #define TWO_PAIR       	6
 #define THREE_OF_A_KIND	5
-#define FLUSH		4
-#define STRAIGHT	3
+#define FLUSH		3       //tonghua
+#define STRAIGHT	4      //sunzi
 #define FULL_HOUSE     	2
 #define FOUR_OF_A_KIND	1
 #define STRAIGHT_FLUSH	0

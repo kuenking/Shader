@@ -194,6 +194,7 @@ int explMsg(char *msg) {
         roundData.callNum=0;
         roundData.attack = 0;
         roundData.tight=0;
+        roundData.noFoldNum = roundData.playerNum;
         while(1)
         {
             p = strtok(p, "\n" );
@@ -223,6 +224,10 @@ int explMsg(char *msg) {
             case CALL:
                 roundData.callNum++;
                 break;
+            case FOLD:
+                roundData.player[id].isLive = false;
+                --roundData.noFoldNum;
+                break;
             }
 
             switch(roundData.typePlayer[typeID].type)
@@ -234,7 +239,7 @@ int explMsg(char *msg) {
                 roundData.tight++;
                 break;
             }
-            if(roundData.gameStep==STEP_ONE)
+            if(roundData.gameStep==STEP_ONE)//jishuan player type
             {
                 RU(sprintf(temp,"TTTTTTTTTTTT id:%d topHand:%d TTTTTTTTTTTTT",id,roundData.player[id].topHand););
                 LOG2F(filename,temp);
